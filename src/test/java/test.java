@@ -29,13 +29,23 @@ import static org.opencv.imgproc.Imgproc.RETR_EXTERNAL;
  * 灰度化
  * 二值化
  * 膨胀腐蚀
+ * 文字区域
  * 倾斜校正--摆正
- * <p>
- * 图片裁剪身份证
- * <p>
+ * 摆正后裁剪罪--保留最大的身份证轮廓图片
  * 标准化--统一大小
+ *
  * <p>
- * 根据位置裁剪识别
+ * 标准化后的图片
+ * Filter涂白
+ * Filter黑白化
+ * Filter灰度化
+ * 二值化
+ * 膨胀腐蚀得到文字轮廓--保存到List<RotatedRect>
+ * 红线画出轮廓
+ * 根据List<RotatedRect>裁剪
+ *
+ * <p>
+ * 根据裁剪图片进行识别
  */
 
 public class test {
@@ -47,7 +57,7 @@ public class test {
         System.load(url.getPath());
 
         //原图路径
-        String sourceImage = "E:\\Desktop\\OCRTest\\image\\10.png";
+        String sourceImage = "E:\\Desktop\\OCRTest\\image\\07.png";
         //处理后的图片保存路径
         String processedImage = sourceImage.substring(0, sourceImage.lastIndexOf(".")) + "after.png";
 
@@ -81,12 +91,13 @@ public class test {
         imshow("Zoomed Image", zoomedImg);
 
 
-
         BufferedImage bufferedImage = ImageConvert.Mat2BufImg(zoomedImg, ".png");
 
         BufferedImage paintWhiteImg = ImageFilterUtil.imageRGBDifferenceFilter(bufferedImage, targetDifferenceValue);
-        BufferedImage _grayImg=ImageFilterUtil.gray(paintWhiteImg);
-        Mat _binaryImg = ImageOpencvUtil.binaryzation(ImageConvert.BufImg2Mat(_grayImg));
+        BufferedImage _grayImg = ImageFilterUtil.gray(paintWhiteImg);
+        Mat __grayImg = ImageOpencvUtil.gray(ImageConvert.BufImg2Mat(_grayImg));
+        Mat _binaryImg = ImageOpencvUtil.ImgBinarization(__grayImg);
+//        Mat _binaryImg = ImageOpencvUtil.binaryzation(__grayImg);
 
 
 //        Mat _grayImg = ImageOpencvUtil.gray(zoomedImg);

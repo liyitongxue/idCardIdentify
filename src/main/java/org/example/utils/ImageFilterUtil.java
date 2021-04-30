@@ -107,10 +107,14 @@ public class ImageFilterUtil {
                  */
                 // 经过不断尝试，RGB数值相互间相差15以内的都基本上是灰色，
                 // 对以身份证来说特别是介于73到78之间，还有大于100的部分RGB值都是干扰色，将它们一次性转变成白色
-                if ((Math.abs(rgb[0] - rgb[1]) < 30)
-                        && (Math.abs(rgb[0] - rgb[2]) < 30)
-                        && (Math.abs(rgb[1] - rgb[2]) < 30)
-                        && (((rgb[0] > 73) && (rgb[0] < 78)) || (rgb[0] > 100))) {
+                if (
+                        (Math.abs(rgb[0] - rgb[1]) < 50)
+                                && (Math.abs(rgb[0] - rgb[2]) < 50)
+                                && (Math.abs(rgb[1] - rgb[2]) < 50)
+                                && (((rgb[0] > 73) && (rgb[0] < 78)) || (rgb[0] > 100))
+                                || (rgb[0] + rgb[1] + rgb[2] > 300 && Math.abs(rgb[0] - rgb[1]) < 20 && Math.abs(rgb[0] - rgb[2]) < 20 && Math.abs(rgb[1] - rgb[2]) < 20)
+//                                || (rgb[0] + rgb[1] + rgb[2] > 300)
+                ) {
                     // 进行换色操作,0xffffff是白色
                     image.setRGB(i, j, 0xffffff);
                 }
@@ -173,67 +177,5 @@ public class ImageFilterUtil {
         return ImageHelper.getScaledInstance(image, 673, 425);
     }
 
-    public static BufferedImage convertToBinary(BufferedImage image) {
-        int width = image.getWidth();
-        int height = image.getHeight();
-        int[] rgb = new int[3];
 
-        int black = new Color(0, 0, 0).getRed();
-        int white = new Color(255, 255, 255).getRGB();
-        BufferedImage binaryImage = new BufferedImage(width, height, image.getType());
-
-        for (int i = 0; i < width - 1; i++) {
-            for (int j = 0; j < height; j++) {
-                //得到指定像素（i,j)上的RGB值，
-                int pixel = image.getRGB(i, j);
-                //分别进行位操作得到 r g b上的值
-                rgb[0] = (pixel & 0xff0000) >> 16;
-                rgb[1] = (pixel & 0xff00) >> 8;
-                rgb[2] = (pixel & 0xff);
-                if (((rgb[0] + rgb[1] + rgb[2]) / 3) < 192) {
-                    image.setRGB(i, j, black);
-                } else {
-                    image.setRGB(i, j, white);
-                }
-            }
-        }
-
-        return binaryImage;
-    }
-
-
-    public static void removeBrinaryImageNoisePoint(BufferedImage image) {
-        int[][] grayMatrix = new int[image.getWidth()][image.getHeight()];
-//      找到灰度差异扩大点
-        for (int x = 0; x < image.getWidth(); x++) {
-            for (int y = 0; y < image.getHeight(); y++) {
-                Object data = image.getRaster().getDataElements(x, y, null);
-                int red = image.getColorModel().getRed(data);
-                grayMatrix[x][y] = red;
-            }
-        }
-        for (int x = 0; x < grayMatrix.length; x++) {
-            for (int y = 0; y < grayMatrix[x].length; y++) {
-                if (grayMatrix[x][y] < 255) {
-                    //判断四周有没有存在像素
-                    boolean isNoisepoint = true;
-                    if (x - 1 >= 0) {
-                        isNoisepoint = isNoisepoint && grayMatrix[x - 1][y] != 0;
-                    }
-                    if (y - 1 >= 0) {
-                        isNoisepoint = isNoisepoint && grayMatrix[x][y - 1] != 0;
-                    }
-                    if (x + 1 < grayMatrix.length) {
-                        isNoisepoint = isNoisepoint && grayMatrix[x + 1][y] != 0;
-                    }
-                    if (y + 1 < grayMatrix[x].length) {
-                        isNoisepoint = isNoisepoint && grayMatrix[x][y + 1] != 0;
-                    }
-
-                    if (isNoisepoint)
-                        image.setRGB(x, y, Color.white.getRGB());
-                }
-            }
-        }
-    }
 }

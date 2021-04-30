@@ -25,7 +25,7 @@ public class testOpencvBinary {
         System.load(url.getPath());
 
         //原图路径
-        String sourceImage = "E:\\Desktop\\OCRTest\\image\\01.png";
+        String sourceImage = "E:\\Desktop\\OCRTest\\image\\04.png";
         //处理后的图片保存路径--在原来的图片主名后加上afterProcessed
         String result_image = sourceImage.substring(0, sourceImage.lastIndexOf(".")) + "afterProcessed.png";
 

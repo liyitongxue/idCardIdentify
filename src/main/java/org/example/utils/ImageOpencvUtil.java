@@ -34,8 +34,7 @@ public class ImageOpencvUtil {
     public static Mat blur(Mat src) {
         Mat dst = src.clone();
         Imgproc.blur(src, dst, new Size(9, 9), new Point(-1, -1), Core.BORDER_DEFAULT);
-        src = dst;
-        return src;
+        return dst;
     }
 
     /**
@@ -47,8 +46,7 @@ public class ImageOpencvUtil {
     public static Mat GaussianBlur(Mat src) {
         Mat dst = src.clone();
         Imgproc.GaussianBlur(src, dst, new Size(9, 9), 0, 0, Core.BORDER_DEFAULT);
-        src = dst;
-        return src;
+        return dst;
     }
 
     /**
@@ -60,8 +58,13 @@ public class ImageOpencvUtil {
     public static Mat medianBlur(Mat src) {
         Mat dst = src.clone();
         Imgproc.medianBlur(src, dst, 7);
-        src = dst;
-        return src;
+        return dst;
+    }
+
+    public static Mat pyrMeanShiftFiltering(Mat src) {
+        Mat dst = src.clone();
+        Imgproc.pyrMeanShiftFiltering(src, dst, 10, 50);
+        return dst;
     }
 
     /**
@@ -91,7 +94,11 @@ public class ImageOpencvUtil {
      */
     public static Mat ImgBinarization(Mat grayImage) {
         Mat threshImage = new Mat(grayImage.height(), grayImage.width(), CvType.CV_8UC1);
-        Imgproc.threshold(grayImage, threshImage, 100, 255, Imgproc.THRESH_BINARY);
+//        Imgproc.threshold(grayImage, threshImage, 100, 255, Imgproc.THRESH_BINARY);//效果不好
+//        Imgproc.threshold(grayImage, threshImage, 0, 255, Imgproc.THRESH_BINARY | Imgproc.THRESH_OTSU);
+//        Imgproc.threshold(grayImage, threshImage, 0, 255, Imgproc.THRESH_BINARY | Imgproc.THRESH_TRIANGLE);//白黑不行
+        Imgproc.threshold(grayImage, threshImage, 127, 255, Imgproc.THRESH_TRUNC);//还行
+//        Imgproc.threshold(grayImage, threshImage, 127, 255, Imgproc.THRESH_TOZERO);//不行
         return threshImage;
     }
 
@@ -163,25 +170,26 @@ public class ImageOpencvUtil {
      * @return
      */
     public static Mat binaryzation(Mat src) {
-        if (src.channels() != 1) {
+        Mat dst = src.clone();
+        if (dst.channels() != 1) {
             throw new RuntimeException("不是单通道图，需要先灰度化！！！");
         }
         int nWhiteSum = 0, nBlackSum = 0;
         int i, j;
-        int width = src.cols();
-        int height = src.rows();
+        int width = dst.cols();
+        int height = dst.rows();
         int value;
 
-        int threshold = getAdapThreshold(src);
+        int threshold = getAdapThreshold(dst);
 
         for (j = 0; j < height; j++) {
             for (i = 0; i < width; i++) {
-                value = (int) src.get(j, i)[0];
+                value = (int) dst.get(j, i)[0];
                 if (value > threshold) {
-                    src.put(j, i, WHITE);
+                    dst.put(j, i, WHITE);
                     nWhiteSum++;
                 } else {
-                    src.put(j, i, BLACK);
+                    dst.put(j, i, BLACK);
                     nBlackSum++;
                 }
             }
@@ -189,17 +197,29 @@ public class ImageOpencvUtil {
         if (true) {
             // 白底黑字
             if (nBlackSum > nWhiteSum) {
-                src = turnPixel(src);
+                dst = turnPixel(dst);
             }
         } else {
             // 黑底白字
             if (nWhiteSum > nBlackSum) {
-                src = turnPixel(src);
+                dst = turnPixel(dst);
+            }
+        }
+        return dst;
+    }
+
+    public static Mat whiteBlack(Mat src) {
+        int width = src.cols();
+        int height = src.rows();
+        for (int i = 0; i < height; i++) {
+            for (int j = 0; j < height; j++) {
+                if ((int) src.get(j, i)[0] != BLACK) {
+                    src.put(j, i, WHITE);
+                }
             }
         }
         return src;
     }
-
 
     /**
      * 根据二值化图片进行膨胀与腐蚀
@@ -268,6 +288,7 @@ public class ImageOpencvUtil {
         }
         return rects;
     }
+
 
     /**
      * 倾斜矫正
@@ -532,37 +553,88 @@ public class ImageOpencvUtil {
 
 
     /**
-     * 返回边缘检测之后的最大矩形轮廓,并返回
+     * 根据二值化图片进行膨胀与腐蚀
      *
-     * @param cannyMat Canny之后的mat矩阵
+     * @param img 需膨胀腐蚀处理的灰度化后的Mat矩阵图像
      * @return
      */
-//    public static RotatedRect findMaxRect(Mat cannyMat) {
-//        List<MatOfPoint> contours = new ArrayList<MatOfPoint>();
-//        Mat hierarchy = new Mat();
-//
-//        // 寻找轮廓
-//        Imgproc.findContours(cannyMat, contours, hierarchy, Imgproc.RETR_EXTERNAL, Imgproc.CHAIN_APPROX_NONE, new Point(0, 0));
-//
-//        // 找出匹配到的最大轮廓
-//        double area = Imgproc.boundingRect(contours.get(0)).area();
-//        int index = 0;
-//
-//        // 找出匹配到的最大轮廓
-//        for (int i = 0; i < contours.size(); i++) {
-//            double tempArea = Imgproc.boundingRect(contours.get(i)).area();
-//            if (tempArea > area) {
-//                area = tempArea;
-//                index = i;
-//            }
-//        }
-//
-//        MatOfPoint2f matOfPoint2f = new MatOfPoint2f(contours.get(index).toArray());
-//
-//        RotatedRect rect = Imgproc.minAreaRect(matOfPoint2f);
-//
-//        return rect;
-//    }
+    public static Mat preprocess(Mat img) {
+        //1.Sobel算子，x方向求梯度
+        Mat sobel = new Mat();
+        Imgproc.Sobel(img, sobel, 0, 1, 0, 3);
+
+        //2.二值化
+        Mat binaryImage = new Mat();
+        Imgproc.threshold(sobel, binaryImage, 0, 255, Imgproc.THRESH_OTSU + Imgproc.THRESH_BINARY);
+
+        //3.膨胀和腐蚀操作核设定
+        Mat element1 = Imgproc.getStructuringElement(Imgproc.MORPH_RECT, new Size(24, 9));
+        //控制高度设置可以控制上下行的膨胀程度，例如3比4的区分能力更强,但也会造成漏检
+        Mat element2 = Imgproc.getStructuringElement(Imgproc.MORPH_RECT, new Size(30, 12));
+
+        //4.膨胀一次，让轮廓突出
+        Mat dilate1 = new Mat();
+//        Imgproc.dilate(binaryImage, dilate1, element2);
+        Imgproc.dilate(binaryImage, dilate1, element2, new Point(-1, -1), 1, 1, new Scalar(1));
+
+        //5.腐蚀一次，去掉细节，表格线等。这里去掉的是竖直的线
+        Mat erode1 = new Mat();
+        Imgproc.erode(dilate1, erode1, element1);
+
+        //6.再次膨胀，让轮廓明显一些
+        Mat dilate2 = new Mat();
+        Imgproc.dilate(erode1, dilate2, element2);
+
+        return dilate2;
+    }
+
+    /**
+     * 作用：获取文字区域
+     *
+     * @param img 膨胀与腐蚀后的Mat矩阵图像
+     * @return
+     */
+    public static List<RotatedRect> findTextRegion1(Mat img) {
+        List<RotatedRect> rects = new ArrayList<RotatedRect>();
+        //1.查找轮廓
+        List<MatOfPoint> contours = new ArrayList<MatOfPoint>();
+        Mat hierarchy = new Mat();
+//        Imgproc.findContours(img, contours, hierarchy, RETR_EXTERNAL, Imgproc.CHAIN_APPROX_NONE, new Point(-1, -1));//11.png不能被倾斜校正
+        Imgproc.findContours(img, contours, hierarchy, Imgproc.RETR_CCOMP, CHAIN_APPROX_SIMPLE, new Point(-1, -1));//11.png可以被倾斜校正
+//        Imgproc.findContours(img, contours, hierarchy, RETR_EXTERNAL, Imgproc.CHAIN_APPROX_NONE, new Point(0, 0));//11.png不能被倾斜校正
+
+        int img_width = img.width();
+        int img_height = img.height();
+        int size = contours.size();
+
+        //2.筛选那些面积小的
+        for (int i = 0; i < size; i++) {
+            double area = Imgproc.contourArea(contours.get(i));
+            if (area < 600)//原来是1000
+                continue;
+            //轮廓近似，作用较小，approxPolyDP函数有待研究
+            double epsilon = 0.001 * Imgproc.arcLength(new MatOfPoint2f(contours.get(i).toArray()), true);
+            MatOfPoint2f approxCurve = new MatOfPoint2f();
+            Imgproc.approxPolyDP(new MatOfPoint2f(contours.get(i).toArray()), approxCurve, epsilon, true);
+
+            //找到最小矩形，该矩形可能有方向
+            RotatedRect rect = Imgproc.minAreaRect(new MatOfPoint2f(contours.get(i).toArray()));
+            //计算高和宽
+            int m_width = rect.boundingRect().width;
+            int m_height = rect.boundingRect().height;
+
+            //筛选那些太细的矩形，留下扁的
+            if (m_width * 1.2 < m_height)
+                continue;
+//            if (img_width == rect.boundingRect().br().x)
+//                continue;
+//            if (img_height == rect.boundingRect().br().y)
+//                continue;
+            //符合条件的rect添加到rects集合中
+            rects.add(rect);
+        }
+        return rects;
+    }
 
     /**
      * 旋转矩形
@@ -591,31 +663,6 @@ public class ImageOpencvUtil {
 
         return correctMat;
     }
-
-
-    /**
-     * 矫正图像
-     *
-     * @param src
-     * @return
-     */
-//    public static Mat correct(Mat src) {
-//        // Canny
-//        Mat cannyMat = canny(src);
-//
-//        // 获取最大矩形
-//        RotatedRect rect = findMaxRect(cannyMat);
-//
-//        // 旋转矩形
-//        Mat CorrectImg = rotation(cannyMat, rect);
-//        Mat NativeCorrectImg = rotation(src, rect);
-//
-//        //裁剪矩形
-////        correctMat = cutRect(CorrectImg, NativeCorrectImg);
-////        return correctMat;
-//        cutRect(CorrectImg, NativeCorrectImg);
-//        return CorrectImg;
-//    }
 
 
     /**
