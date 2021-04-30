@@ -25,7 +25,7 @@ public class testOpencvFindText {
         System.load(url.getPath());
 
         //原图路径
-        String sourceImage = "E:\\Desktop\\OCRTest\\image\\02.png";
+        String sourceImage = "E:\\Desktop\\OCRTest\\image\\01.png";
         //处理后的图片保存路径
         String processedImage = sourceImage.substring(0, sourceImage.lastIndexOf(".")) + "after.png";
 
