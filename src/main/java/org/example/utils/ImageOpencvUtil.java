@@ -43,7 +43,7 @@ public class ImageOpencvUtil {
      * @param src Mat矩阵图像
      * @return
      */
-    public static Mat GaussianBlur(Mat src) {
+    public static Mat gaussianBlur(Mat src) {
         Mat dst = src.clone();
         Imgproc.GaussianBlur(src, dst, new Size(9, 9), 0, 0, Core.BORDER_DEFAULT);
         return dst;
@@ -61,10 +61,59 @@ public class ImageOpencvUtil {
         return dst;
     }
 
+    /**
+     * 作用：非局部均值去噪
+     *
+     * @param src Mat矩阵图像
+     * @return
+     */
     public static Mat pyrMeanShiftFiltering(Mat src) {
         Mat dst = src.clone();
         Imgproc.pyrMeanShiftFiltering(src, dst, 10, 50);
         return dst;
+    }
+
+    /**
+     * 伽马校正
+     * 伽马校正对图像的修正作用就是通过增强低灰度或高灰度的细节实现的
+     * 值越小，对图像低灰度部分的扩展作用就越强，值越大，对图像高灰度部分的扩展作用就越强，
+     * 通过不同的值，就可以达到增强低灰度或高灰度部分细节的作用。
+     * 在对图像进行伽马变换时，如果输入的图像矩阵是CV_8U,在进行幂运算时，大于255的值会自动截断为255；
+     * 所以，先将图像的灰度值归一化到【0,1】范围，然后再进行幂运算
+     * @param src
+     */
+    public static Mat imageBrightness(Mat src) {
+
+        //定义2个与输入图像大小类型一致的空对象
+        Mat dst = new Mat(src.size(),src.type());
+        Mat dst_1 = new Mat(src.size(),src.type());
+        /*
+         * 缩放并转换到另外一种数据类型：
+         * dst：目的矩阵；
+         * type：需要的输出矩阵类型，或者更明确的，是输出矩阵的深度，如果是负值（常用-1）则输出矩阵和输入矩阵类型相同；
+         * scale:比例因子（输入矩阵参数*比例因子）；
+         * shift：将输入数组元素按比例缩放后添加的值（第三个参数处理后+第四个参数）；
+         * CV_64F:64 -表示双精度 32-表示单精度 F - 浮点  Cx - 通道数,例如RGB就是三通道
+         */
+        src.convertTo(dst, CvType.CV_64F, 1.0 / 255, 0);
+
+        /*  将每个数组元素提升为幂：
+         *  对于非整数幂指数，将使用输入数组元素的绝对值。 但是，可以使用一些额外的操作获得负值的真实值。
+         *  对于某些幂值（例如整数值0.5和-0.5），使用了专用的更快算法。
+         *  不处理特殊值（NaN，Inf）。
+         *  @param 输入数组。
+         *  @param 幂的幂指数。
+         *  @param 输出数组，其大小和类型与输入数组相同。
+         */
+        Core.pow(dst, 0.7, dst_1);
+        /* 缩放并转换到另外一种数据类型：
+         * CV_8UC1---8位无符号的单通道---灰度图片
+         * CV_8UC3---8位无符号的三通道---RGB彩色图像
+         * CV_8UC4---8位无符号的四通道---带透明色的RGB图像
+         */
+        dst_1.convertTo(dst_1, CvType.CV_8U,255,0);
+
+        return dst_1;
     }
 
     /**
@@ -428,7 +477,7 @@ public class ImageOpencvUtil {
         System.out.println("height = " + height);
 
         //检测的高度过低，则说明拍照时身份证边框没拍全，直接返回correctMat，如检测的不是身份证则不需要这个if()判断
-        //怎么判断如果一个举行最大边没有被完全检测，即检测的不是一个闭合的矩形，但是仍应该保留这个矩形
+        //怎么判断如果一个矩形最大边没有被完全检测，即检测的不是一个闭合的矩形，但是仍应该保留这个矩形
 //        if (height < 0.3 * width)
 //            return correctMat;
 
@@ -607,11 +656,45 @@ public class ImageOpencvUtil {
         int img_height = img.height();
         int size = contours.size();
 
+//        RotatedRect idRect, nameRect = null, sexRect = null;
+//        //身份证宽度
+//        int idWidth = Imgproc.minAreaRect(new MatOfPoint2f(contours.get(0).toArray())).boundingRect().width;
+//        int index = 0;
+//
+//        for (int i = 0; i < size; i++) {
+//            double area = Imgproc.contourArea(contours.get(i));
+//            if (area < 1000)//原来是1000
+//                continue;
+//
+//            //找到身份证号码矩形框
+//            RotatedRect rect = Imgproc.minAreaRect(new MatOfPoint2f(contours.get(i).toArray()));
+//            int tempIdWidth = rect.boundingRect().width;
+//            if (tempIdWidth > idWidth) {
+//                idWidth = tempIdWidth;
+//                index = i;
+//            }
+//        }
+//        idRect = Imgproc.minAreaRect(new MatOfPoint2f(contours.get(index).toArray()));
+//
+//        rects.add(idRect);
+//
+//        //8个区域：姓名，性别，名族，出生年份，出生月份，出生日，住址，身份证号码
+//        nameRect = new RotatedRect(new Point(idRect.center.x - 245, idRect.center.y - 290), new Size(110, 60), 0);
+//        sexRect = new RotatedRect(new Point(idRect.center.x - 275, idRect.center.y - 238), new Size(45, 40), 0);
+//        rects.add(nameRect);
+//        rects.add(sexRect);
+
+//        for (int i = 0; i < size; i++) {
+//
+//        }
+
+
         //2.筛选那些面积小的
         for (int i = 0; i < size; i++) {
             double area = Imgproc.contourArea(contours.get(i));
-            if (area < 600)//原来是1000
+            if (area < 1000)//原来是1000
                 continue;
+
             //轮廓近似，作用较小，approxPolyDP函数有待研究
             double epsilon = 0.001 * Imgproc.arcLength(new MatOfPoint2f(contours.get(i).toArray()), true);
             MatOfPoint2f approxCurve = new MatOfPoint2f();
@@ -623,16 +706,37 @@ public class ImageOpencvUtil {
             int m_width = rect.boundingRect().width;
             int m_height = rect.boundingRect().height;
 
-            //筛选那些太细的矩形，留下扁的
+            System.out.println(m_width);
+
+//            if (m_width < 80)
+//                continue;
+//            if (m_width < m_height * 2)
+//                continue;
+            if (80 < rect.center.y && rect.center.y < 200)
+                continue;
+
+            //筛选那些太细的矩形，留下扁的/**/
             if (m_width * 1.2 < m_height)
                 continue;
-//            if (img_width == rect.boundingRect().br().x)
-//                continue;
-//            if (img_height == rect.boundingRect().br().y)
-//                continue;
+            if (img_width == rect.boundingRect().br().x)
+                continue;
+            if (img_height == rect.boundingRect().br().y)
+                continue;
+
             //符合条件的rect添加到rects集合中
             rects.add(rect);
         }
+
+        System.out.println("中心坐标x：");
+        for (int i = 0; i < rects.size(); i++) {
+            System.out.println(rects.get(i).center.x);
+        }
+        System.out.println("中心坐标y：");
+        for (int i = 0; i < rects.size(); i++) {
+
+            System.out.println(rects.get(i).center.y);
+        }
+
         return rects;
     }
 
@@ -727,305 +831,38 @@ public class ImageOpencvUtil {
         return result;
     }
 
-    /**
-     * 水平投影法切割，适用于类似表格的图像(默认白底黑字) 改进
-     *
-     * @param src Mat矩阵对象
-     * @return
-     */
-    public static List<Mat> _cutImgX(Mat src) {
-        int i, j;
-        int width = src.cols(), height = src.rows();
-        int[] xNum, cNum;
-        int average = 0;//记录黑色像素和的平均值
 
-        int zipLine = 3;
-        // 压缩像素值数量；即统计三行像素值的数量为一行// 统计出每行黑色像素点的个数
-        xNum = zipLinePixel(countPixel(src, height, width, true), zipLine);
+    private org.opencv.core.Mat projectionVerticality(org.opencv.core.Mat mat) {
+        org.opencv.core.Mat projectionMat = mat.clone();//曲线救国，获取同样一个mat
+        projectionMat.setTo(new org.opencv.core.Scalar(255));//然后再把颜色换成白色
+        Double[] dotList = new Double[mat.cols()];//创建一个list用于存储每一列的黑点数量
+        System.loadLibrary(Core.NATIVE_LIBRARY_NAME);
+        System.out.println(mat.dump());
+        int col = mat.cols();
+        int row = mat.rows();
+        for (int x = 0; x < col; x++) {
+            dotList[x] = 0.0;
+            for (int y = 0; y < row; y++) {
+                double binData = mat.get(y, x)[0];
+                if (binData == 0) {//黑色
 
-        // 排序
-        cNum = Arrays.copyOf(xNum, xNum.length);
-        Arrays.sort(cNum);
-
-        for (i = 31 * cNum.length / 32; i < cNum.length; i++) {
-            average += cNum[i];
-        }
-        average /= (height / 32);
-
-        // System.out.println(average);
-
-        // 把需要切割的y轴点存到cutY中
-        List<Integer> cutY = new ArrayList<Integer>();
-        for (i = 0; i < xNum.length; i++) {
-            if (xNum[i] > average) {
-                cutY.add(i * zipLine + 1);
-            }
-        }
-
-        // 优化cutY,把距离相差在30以内的都清除掉
-        if (cutY.size() != 0) {
-            int temp = cutY.get(cutY.size() - 1);
-            // 因为线条有粗细，优化cutY
-            for (i = cutY.size() - 2; i >= 0; i--) {
-                int k = temp - cutY.get(i);
-                if (k <= 30) {
-                    cutY.remove(i + 1);
-                } else {
-                    temp = cutY.get(i);
-                }
-            }
-            temp = cutY.get(cutY.size() - 1);
-            // 因为线条有粗细，优化cutY
-            for (i = cutY.size() - 2; i >= 0; i--) {
-                int k = temp - cutY.get(i);
-                if (k <= 30) {
-                    cutY.remove(i + 1);
-                } else {
-                    temp = cutY.get(i);
+                    dotList[x]++;
                 }
             }
         }
-
-        //把切割的图片保存到YMat中
-        List<Mat> YMat = new ArrayList<Mat>();
-        for (i = 1; i < cutY.size(); i++) {
-            // 设置感兴趣区域
-            int startY = cutY.get(i - 1);
-            int h = cutY.get(i) - startY;
-            // System.out.println(startY);
-            // System.out.println(h);
-            Mat temp = new Mat(src, new Rect(0, startY, width, h));
-            Mat t = new Mat();
-            temp.copyTo(t);
-            YMat.add(t);
-        }
-        return YMat;
-    }
-
-    /**
-     * 切割 因为是表格图像，采用新的切割思路，中和水平切割和垂直切割一次性切割出所有的小格子
-     *
-     * @param src
-     * @return
-     */
-    public static List<Mat> cut(Mat src) {
-        if (src.channels() == 3) {
-            // TODO
-        }
-        int i, j, k;
-        int width = src.cols(), height = src.rows();
-        int[] xNum = new int[height], copy_xNum;
-        int x_average = 0;
-        int value = -1;
-        // 统计每行每列的黑色像素值
-        for (i = 0; i < width; i++) {
-            for (j = 0; j < height; j++) {
-                value = (int) src.get(j, i)[0];
-                if (value == BLACK) {
-                    xNum[j]++;
+        //然后生成投影图
+        for (int x = 0; x < mat.cols(); x++) {
+            for (int y = 0; y < mat.rows(); y++) {
+                if (x == 147) {
+                    System.out.println("下一行将会出现错误");
+                }
+                if (y < dotList[x]) {
+                    projectionMat.put(y, x, 0);
+                    System.out.println(x + "列" + y + "行");
                 }
             }
         }
-
-        int zipXLine = 3;
-        xNum = zipLinePixel(xNum, zipXLine);
-
-        // 排序 ............求水平切割点
-        copy_xNum = Arrays.copyOf(xNum, xNum.length);
-        Arrays.sort(copy_xNum);
-
-        for (i = 31 * copy_xNum.length / 32; i < copy_xNum.length; i++) {
-            x_average += copy_xNum[i];
-        }
-        x_average /= (height / 32);
-
-        // System.out.println("x_average: " + x_average);
-
-        // 把需要切割的y轴点存到cutY中
-        List<Integer> cutY = new ArrayList<Integer>();
-        for (i = 0; i < xNum.length; i++) {
-            if (xNum[i] > x_average) {
-                cutY.add(i * zipXLine + zipXLine / 2);
-            }
-        }
-
-        // 优化cutY,把距离相差在30以内的都清除掉
-        if (cutY.size() != 0) {
-            int temp = cutY.get(cutY.size() - 1);
-            // 因为线条有粗细，优化cutY
-            for (i = cutY.size() - 2; i >= 0; i--) {
-                k = temp - cutY.get(i);
-                if (k <= 10 * zipXLine) {
-                    cutY.remove(i + 1);
-                } else {
-                    temp = cutY.get(i);
-                }
-            }
-            temp = cutY.get(cutY.size() - 1);
-            // 因为线条有粗细，优化cutY
-            for (i = cutY.size() - 2; i >= 0; i--) {
-                k = temp - cutY.get(i);
-                if (k <= 10 * zipXLine) {
-                    cutY.remove(i + 1);
-                } else {
-                    temp = cutY.get(i);
-                }
-            }
-        }
-
-        // 把需要切割的x轴的点存到cutX中
-        /**
-         * 新思路，因为不是很畸变的图像，y轴的割点还是比较好确定的 随机的挑选一个y轴割点，用一个滑动窗口去遍历选中点所在直线，确定x轴割点
-         */
-        List<Integer> cutX = new ArrayList<Integer>();
-        int choiceY = cutY.size() > 1 ? cutY.get(1) : (cutY.size() > 0 ? cutY.get(0) : -1);
-        if (choiceY == -1) {
-            throw new RuntimeException("切割失败，没有找到水平切割点");
-        }
-
-        int winH = 5;
-        List<Integer> LH1 = new ArrayList<Integer>();
-        List<Integer> LH2 = new ArrayList<Integer>();
-        if (choiceY - winH >= 0 && choiceY + winH <= height) {
-            // 上下
-            for (i = 0; i < width; i++) {
-                value = (int) src.get(choiceY - winH, i)[0];
-                if (value == BLACK) {
-                    LH1.add(i);
-                }
-                value = (int) src.get(choiceY + winH, i)[0];
-                if (value == BLACK) {
-                    LH2.add(i);
-                }
-            }
-        } else if (choiceY + winH <= height && choiceY + 2 * winH <= height) {
-            // 下
-            for (i = 0; i < width; i++) {
-                value = (int) src.get(choiceY + 2 * winH, i)[0];
-                if (value == BLACK) {
-                    LH1.add(i);
-                }
-                value = (int) src.get(choiceY + winH, i)[0];
-                if (value == BLACK) {
-                    LH2.add(i);
-                }
-            }
-        } else if (choiceY - winH >= 0 && choiceY - 2 * winH >= 0) {
-            // 上
-            for (i = 0; i < width; i++) {
-                value = (int) src.get(choiceY - winH, i)[0];
-                if (value == BLACK) {
-                    LH1.add(i);
-                }
-                value = (int) src.get(choiceY - 2 * winH, i)[0];
-                if (value == BLACK) {
-                    LH2.add(i);
-                }
-            }
-        } else {
-            throw new RuntimeException("切割失败，图像异常");
-        }
-
-        // 优化LH1、LH2,把距离相差在30以内的都清除掉
-        if (LH1.size() != 0) {
-            int temp = LH1.get(LH1.size() - 1);
-            // 因为线条有粗细，优化cutY
-            for (i = LH1.size() - 2; i >= 0; i--) {
-                k = temp - LH1.get(i);
-                if (k <= 50) {
-                    LH1.remove(i + 1);
-                } else {
-                    temp = LH1.get(i);
-                }
-            }
-            temp = LH1.get(LH1.size() - 1);
-            // 因为线条有粗细，优化cutY
-            for (i = LH1.size() - 2; i >= 0; i--) {
-                k = temp - LH1.get(i);
-                if (k <= 50) {
-                    LH1.remove(i + 1);
-                } else {
-                    temp = LH1.get(i);
-                }
-            }
-        }
-        if (LH2.size() != 0) {
-            int temp = LH2.get(LH2.size() - 1);
-            // 因为线条有粗细，优化cutY
-            for (i = LH2.size() - 2; i >= 0; i--) {
-                k = temp - LH2.get(i);
-                if (k <= 50) {
-                    LH2.remove(i + 1);
-                } else {
-                    temp = LH2.get(i);
-                }
-            }
-            temp = LH2.get(LH2.size() - 1);
-            // 因为线条有粗细，优化cutY
-            for (i = LH2.size() - 2; i >= 0; i--) {
-                k = temp - LH2.get(i);
-                if (k <= 50) {
-                    LH2.remove(i + 1);
-                } else {
-                    temp = LH2.get(i);
-                }
-            }
-        }
-
-        if (LH1.size() < LH2.size()) {
-            // 进一步优化LH1
-            int avg = 0;
-            for (k = 1; k < LH1.size() - 2; k++) {
-                avg += LH1.get(k + 1) - LH1.get(k);
-            }
-            avg /= (LH1.size() - 2);
-
-            int temp = LH1.get(LH1.size() - 1);
-            for (i = LH1.size() - 2; i >= 0; i--) {
-                k = temp - LH1.get(i);
-                if (k <= avg) {
-                    LH1.remove(i + 1);
-                } else {
-                    temp = LH1.get(i);
-                }
-            }
-            cutX = LH1;
-        } else {
-            // 进一步优化LH2
-            int avg = 0;
-            for (k = 1; k < LH2.size() - 2; k++) {
-                avg += LH2.get(k + 1) - LH2.get(k);
-            }
-            avg /= (LH2.size() - 2);
-
-            int temp = LH2.get(LH2.size() - 1);
-            for (i = LH2.size() - 2; i >= 0; i--) {
-                k = temp - LH2.get(i);
-                if (k <= avg) {
-                    LH2.remove(i + 1);
-                } else {
-                    temp = LH2.get(i);
-                }
-            }
-            cutX = LH2;
-        }
-
-        List<Mat> destMat = new ArrayList<Mat>();
-        for (i = 1; i < cutY.size(); i++) {
-            for (j = 1; j < cutX.size(); j++) {
-                // 设置感兴趣的区域
-                int startX = cutX.get(j - 1);
-                int w = cutX.get(j) - startX;
-                int startY = cutY.get(i - 1);
-                int h = cutY.get(i) - startY;
-                Mat temp = new Mat(src, new Rect(startX + 2, startY + 2, w - 2, h - 2));
-                Mat t = new Mat();
-                temp.copyTo(t);
-                destMat.add(t);
-            }
-        }
-
-        return destMat;
+        return projectionMat;
     }
 
 

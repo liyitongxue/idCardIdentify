@@ -66,7 +66,6 @@ public class ImageConvert {
         return image;
     }
 
-
     /**
      * Mat转换成BufferedImage
      *
@@ -81,11 +80,6 @@ public class ImageConvert {
         //将编码的Mat存储在字节数组中
         byte[] byteArray = matOfByte.toArray();
 
-//        //准备缓冲图像
-//        InputStream in = new ByteArrayInputStream(byteArray);
-//        BufferedImage bufImage = ImageIO.read(in);
-//        return bufImage;
-
         BufferedImage bufImage = null;
         //准备缓冲图像
         try {
@@ -95,6 +89,5 @@ public class ImageConvert {
             e.printStackTrace();
         }
         return bufImage;
-//        return (BufferedImage) HighGui.toBufferedImage(src);
     }
 }

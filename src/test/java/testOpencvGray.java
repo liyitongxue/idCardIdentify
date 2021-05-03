@@ -20,7 +20,7 @@ public class testOpencvGray {
         System.load(url.getPath());
 
         //原图路径
-        String sourceImage = "E:\\Desktop\\OCRTest\\image\\Grayed\\01.png";
+        String sourceImage = "E:\\Desktop\\OCRTest\\image\\01.png";
         //灰度化的图片保存路径--在原来的图片主名后加上afterGrayOpenCV
         String processedImage = sourceImage.substring(0, sourceImage.lastIndexOf(".")) + "afterGrayOpenCV.png";
 
@@ -35,7 +35,7 @@ public class testOpencvGray {
         //调用ImageOpencvUtil的灰度化gray()方法
         Mat grayImage = ImageOpencvUtil.gray(image);
 
-        //展示灰度化后处理后图像
+        //展示灰度化处理后图像
         imshow("Processed Image", grayImage);
 
         //保存到字符串processedImage对应位置

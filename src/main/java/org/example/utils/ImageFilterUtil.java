@@ -44,6 +44,97 @@ public class ImageFilterUtil {
     }
 
     /**
+     * 图片对比度设置
+     *
+     * @param image 原始图片
+     * @param rate  对比率
+     * @return 调整后的图片(引用原始图片)
+     */
+    public static BufferedImage imageContrast(BufferedImage image, float rate) {
+        for (int x = image.getMinX(); x < image.getWidth(); x++) {
+            for (int y = image.getMinY(); y < image.getHeight(); y++) {
+                Object data = image.getRaster().getDataElements(x, y, null);
+                int dataRed = image.getColorModel().getRed(data);
+                int dataBlue = image.getColorModel().getBlue(data);
+                int dataGreen = image.getColorModel().getGreen(data);
+
+                float newRed = dataRed * rate > 255 ? 255 : dataRed * rate;
+                newRed = newRed < 0 ? 0 : newRed;
+                float newGreen = dataGreen * rate > 255 ? 255 : dataGreen * rate;
+                newGreen = newGreen < 0 ? 0 : newGreen;
+                float newBlue = dataBlue * rate > 255 ? 255 : dataBlue * rate;
+                newBlue = newBlue < 0 ? 0 : newBlue;
+                Color dataColor = new Color(newRed, newGreen, newBlue);
+                image.setRGB(x, y, dataColor.getRGB());
+            }
+        }
+
+        return image;
+    }
+
+    /**
+     * 图片亮度调整
+     *
+     * @param image
+     * @param brightness
+     * @return
+     */
+    public static BufferedImage imageBrightness(BufferedImage image, int brightness) {
+        for (int x = image.getMinX(); x < image.getWidth(); x++) {
+            for (int y = image.getMinY(); y < image.getHeight(); y++) {
+                Object data = image.getRaster().getDataElements(x, y, null);
+                int dataRed = image.getColorModel().getRed(data);
+                int dataBlue = image.getColorModel().getBlue(data);
+                int dataGreen = image.getColorModel().getGreen(data);
+                int dataAlpha = image.getColorModel().getAlpha(data);
+                int newRed = dataRed + brightness > 255 ? 255 : dataRed + brightness;
+                newRed = newRed < 0 ? 0 : newRed;
+                int newBlue = dataBlue + brightness > 255 ? 255 : dataBlue + brightness;
+                newBlue = newBlue < 0 ? 0 : newBlue;
+                int newGreen = dataGreen + brightness > 255 ? 255 : dataGreen + brightness;
+                newGreen = newGreen < 0 ? 0 : newGreen;
+                Color dataColor = new Color(newRed, newGreen, newBlue, dataAlpha);
+                image.setRGB(x, y, dataColor.getRGB());
+            }
+        }
+        return image;
+    }
+
+    /**
+     * 获取图片亮度
+     *
+     * @param image
+     * @return
+     */
+    public static int imageBrightness(BufferedImage image) {
+        long totalRed = 0;
+        long totalGreen = 0;
+        long totalBlue = 0;
+        for (int x = image.getMinX(); x < image.getWidth(); x++) {
+            for (int y = image.getMinY(); y < image.getHeight(); y++) {
+                Object data = image.getRaster().getDataElements(x, y, null);
+                int dataRed = image.getColorModel().getRed(data);
+                int dataBlue = image.getColorModel().getBlue(data);
+                int dataGreen = image.getColorModel().getGreen(data);
+                int dataAlpha = image.getColorModel().getAlpha(data);
+                totalRed += dataRed;
+                totalGreen += dataGreen;
+                totalBlue += dataBlue;
+//        totalBrightness += dataColor.getRGB();
+            }
+        }
+
+        float avgRed = totalRed / (image.getHeight() * image.getWidth());
+        float avgGreen = totalGreen / (image.getWidth() * image.getHeight());
+        float avgBlue = totalBlue / (image.getWidth() * image.getHeight());
+
+        int avgBrightNess = (int) ((avgRed + avgGreen + avgBlue) / 3);
+
+        return avgBrightNess;
+    }
+
+
+    /**
      * 灰度化
      *
      * @param image 灰度化处理的图片
@@ -91,7 +182,7 @@ public class ImageFilterUtil {
         int miny = image.getMinY();
         //遍历图片的像素，为处理图片上的杂色，所以要把指定像素上的颜色换成目标白色 用二层循环遍历长和宽上的每个像素
         int hitCount = 0;
-        for (int i = minx; i < width - 1; i++) {
+        for (int i = minx; i < width; i++) {
             for (int j = miny; j < height; j++) {
                 //得到指定像素（i,j)上的RGB值，
                 int pixel = image.getRGB(i, j);
@@ -108,12 +199,12 @@ public class ImageFilterUtil {
                 // 经过不断尝试，RGB数值相互间相差15以内的都基本上是灰色，
                 // 对以身份证来说特别是介于73到78之间，还有大于100的部分RGB值都是干扰色，将它们一次性转变成白色
                 if (
-                        (Math.abs(rgb[0] - rgb[1]) < 50)
-                                && (Math.abs(rgb[0] - rgb[2]) < 50)
-                                && (Math.abs(rgb[1] - rgb[2]) < 50)
+                        (Math.abs(rgb[0] - rgb[1]) < 15)
+                                && (Math.abs(rgb[0] - rgb[2]) < 15)
+                                && (Math.abs(rgb[1] - rgb[2]) < 15)
                                 && (((rgb[0] > 73) && (rgb[0] < 78)) || (rgb[0] > 100))
                                 || (rgb[0] + rgb[1] + rgb[2] > 300 && Math.abs(rgb[0] - rgb[1]) < 20 && Math.abs(rgb[0] - rgb[2]) < 20 && Math.abs(rgb[1] - rgb[2]) < 20)
-//                                || (rgb[0] + rgb[1] + rgb[2] > 300)
+                                || (rgb[0] + rgb[1] + rgb[2] > 300)
                 ) {
                     // 进行换色操作,0xffffff是白色
                     image.setRGB(i, j, 0xffffff);
@@ -176,6 +267,5 @@ public class ImageFilterUtil {
     public static BufferedImage zoom(BufferedImage image) {
         return ImageHelper.getScaledInstance(image, 673, 425);
     }
-
 
 }

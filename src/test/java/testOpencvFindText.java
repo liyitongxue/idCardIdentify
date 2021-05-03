@@ -17,7 +17,7 @@ import static org.opencv.imgcodecs.Imgcodecs.imread;
  * @since 2021/4/30
  */
 public class testOpencvFindText {
-    private final static int targetDifferenceValue = 10;
+    private final static int targetDifferenceValue = 20;
 
     public static void main(String[] args) throws Exception {
         // 加载动态库
@@ -25,7 +25,7 @@ public class testOpencvFindText {
         System.load(url.getPath());
 
         //原图路径
-        String sourceImage = "E:\\Desktop\\OCRTest\\image\\01.png";
+        String sourceImage = "E:\\Desktop\\OCRTest\\image\\09.png";
         //处理后的图片保存路径
         String processedImage = sourceImage.substring(0, sourceImage.lastIndexOf(".")) + "after.png";
 
@@ -55,19 +55,32 @@ public class testOpencvFindText {
 
         Mat img = zoomedImg.clone();
         BufferedImage bufferedImage = ImageConvert.Mat2BufImg(img, ".png");
+
+        //ImageFilterUtil调节亮度
+        int brightness = ImageFilterUtil.imageBrightness(bufferedImage);
+        System.out.println("brightness = " + brightness);
+        BufferedImage brightnessImg = bufferedImage;
+        if (brightness > 180) {
+            brightnessImg = ImageFilterUtil.imageBrightness(bufferedImage, -60);
+        }
+
         //涂白
-        BufferedImage paintWhiteImg = ImageFilterUtil.imageRGBDifferenceFilter(bufferedImage, targetDifferenceValue);
+//        BufferedImage paintWhiteImg = ImageFilterUtil.imageRGBDifferenceFilter(bufferedImage, targetDifferenceValue);
         //黑白化
-        BufferedImage blackWhiteImage = ImageFilterUtil.replaceWithWhiteColor(paintWhiteImg);
+//        BufferedImage blackWhiteImage = ImageFilterUtil.replaceWithWhiteColor(paintWhiteImg);
         //灰度化
-        BufferedImage _grayImg = ImageFilterUtil.gray(blackWhiteImage);
+        BufferedImage _grayImg = ImageFilterUtil.gray(bufferedImage);
 
         Mat temp = ImageConvert.BufImg2Mat(_grayImg);
         //opencv灰度化
         Mat __grayImg = new Mat();
+        //非局部均值去噪声
         __grayImg = ImageOpencvUtil.pyrMeanShiftFiltering(temp);
-        imshow("__grayImg", __grayImg);
+//        __grayImg = ImageOpencvUtil.pyrMeanShiftFiltering(__grayImg);
+
         __grayImg = ImageOpencvUtil.gray((__grayImg));
+        imshow("__grayImg", __grayImg);
+
 
         //2.二值化
         Mat binaryImage = new Mat();
@@ -79,7 +92,6 @@ public class testOpencvFindText {
         Imgproc.Sobel(__grayImg, sobel, 0, 1, 0, 3);
         Imgproc.threshold(sobel, binaryImage, 0, 255, Imgproc.THRESH_OTSU | Imgproc.THRESH_BINARY);
 
-
         imshow("binaryImage", binaryImage);
 
         //3.膨胀和腐蚀操作核设定
@@ -89,8 +101,8 @@ public class testOpencvFindText {
 
         //4.膨胀一次，让轮廓突出
         Mat dilate1 = new Mat();
-//        Imgproc.dilate(binaryImage, dilate1, element2);
-        Imgproc.dilate(binaryImage, dilate1, element2, new Point(-1, -1), 1, 1, new Scalar(1));
+        Imgproc.dilate(binaryImage, dilate1, element2);
+//        Imgproc.dilate(binaryImage, dilate1, element2, new Point(-1, -1), 1, 1, new Scalar(1));
 
         //5.腐蚀一次，去掉细节，表格线等。这里去掉的是竖直的线
         Mat erode1 = new Mat();
@@ -98,11 +110,11 @@ public class testOpencvFindText {
 
         //6.再次膨胀，让轮廓明显一些
         Mat dilate2 = new Mat();
-        Imgproc.dilate(erode1, dilate2, element2);
+        Imgproc.dilate(erode1, dilate2, element2,new Point(-1, -1), 1, 1, new Scalar(1));
 
 
         Mat dilation = dilate2;
-        imshow("膨胀", dilate2);
+        imshow("dilation", dilate2);
         //3.查找和筛选文字区域
         List<RotatedRect> rects1 = ImageOpencvUtil.findTextRegion1(dilation);
 
