@@ -30,28 +30,31 @@ public class testOCR {
     private final static int targetDifferenceValue = 15;
 
     public static void main(String[] args) throws Exception {
-        // ¼ÓÔØ¶¯Ì¬¿â
+
+        long startTime = System.currentTimeMillis();    //è¯†åˆ«ä¹‹å‰çš„æ—¶é—´
+
+        // åŠ è½½åŠ¨æ€åº“
         URL url = ClassLoader.getSystemResource("lib/opencv/opencv_java452.dll");
         System.load(url.getPath());
 
-        //Ô­Í¼Â·¾¶
+        //åŸå›¾è·¯å¾„
         String sourceImage = "E:\\Desktop\\OCRTest\\image\\03.png";
-        //´¦ÀíºóµÄÍ¼Æ¬±£´æÂ·¾¶
+        //å¤„ç†åçš„å›¾ç‰‡ä¿å­˜è·¯å¾„
         String processedImage = sourceImage.substring(0, sourceImage.lastIndexOf(".")) + "after.png";
 
-        //¶ÁÈ¡Í¼Ïñ
+        //è¯»å–å›¾åƒ
         Mat image = imread(sourceImage);
         if (image.empty()) {
             throw new Exception("image is empty");
         }
 //        imshow("Original Image", image);
 
-        //ÇãĞ±Ğ£Õı
+        //å€¾æ–œæ ¡æ­£
         Mat correctedImg = ImageOpencvUtil.imgCorrection(image);
 
-        //ÇãĞ±Ğ£Õıºó²Ã¼ô
+        //å€¾æ–œæ ¡æ­£åè£å‰ª
         Mat cuttedImg = ImageOpencvUtil.cutRect(correctedImg);
-        //²Ã¼ôºóËõ·Å±ê×¼»¯
+        //è£å‰ªåç¼©æ”¾æ ‡å‡†åŒ–
         Mat zoomedImg = ImageOpencvUtil.zoom(cuttedImg);
 
         imshow("Zoomed Image", zoomedImg);
@@ -59,7 +62,7 @@ public class testOCR {
         Mat img = zoomedImg.clone();
         BufferedImage bufferedImage = ImageConvert.Mat2BufImg(img, ".png");
 
-        //ImageFilterUtilµ÷½ÚÁÁ¶È
+        //ImageFilterUtilè°ƒèŠ‚äº®åº¦
         int brightness = ImageFilterUtil.imageBrightness(bufferedImage);
         System.out.println("brightness = " + brightness);
         BufferedImage brightnessImg = bufferedImage;
@@ -67,33 +70,33 @@ public class testOCR {
             brightnessImg = ImageFilterUtil.imageBrightness(bufferedImage, -60);
         }
 
-        //Í¿°×
+        //æ¶‚ç™½
 //        BufferedImage paintWhiteImg = ImageFilterUtil.imageRGBDifferenceFilter(bufferedImage, targetDifferenceValue);
-        //ºÚ°×»¯
+        //é»‘ç™½åŒ–
 //        BufferedImage blackWhiteImage = ImageFilterUtil.replaceWithWhiteColor(paintWhiteImg);
 
-        //ImageFilterUtil»Ò¶È»¯
+        //ImageFilterUtilç°åº¦åŒ–
         BufferedImage grayImage = ImageFilterUtil.gray(brightnessImg);
-        //½«ImageFilterUtil»Ò¶È»¯ºóµÄÍ¼Æ¬×ª»»ÎªMat¾ØÕóÍ¼Ïñ
+        //å°†ImageFilterUtilç°åº¦åŒ–åçš„å›¾ç‰‡è½¬æ¢ä¸ºMatçŸ©é˜µå›¾åƒ
         Mat matImg = ImageConvert.BufImg2Mat(grayImage);
 
-        //opencv·Ç¾Ö²¿¾ùÖµÈ¥Ôë£¨ĞèÒªÈıÍ¨µÀµÄMatÍ¼Ïñ£©
+        //opencvéå±€éƒ¨å‡å€¼å»å™ªï¼ˆéœ€è¦ä¸‰é€šé“çš„Matå›¾åƒï¼‰
         Mat denoiseImg = ImageOpencvUtil.pyrMeanShiftFiltering(matImg);
 //        grayImg = ImageOpencvUtil.pyrMeanShiftFiltering(grayImg);
 
-        //opencv»Ò¶È»¯--×ªÎªµ¥Í¨µÀ
+        //opencvç°åº¦åŒ–--è½¬ä¸ºå•é€šé“
         Mat grayImg = ImageOpencvUtil.gray(denoiseImg);
 
         imshow("grayImg", grayImg);
 
-        //ÅòÕÍÓë¸¯Ê´ºóµÄMatÍ¼Ïñ
+        //è†¨èƒ€ä¸è…èš€åçš„Matå›¾åƒ
         Mat dilationImg = ImageOpencvUtil.preprocess(grayImg);
         imshow("dilation", dilationImg);
 
-        //²éÕÒºÍÉ¸Ñ¡ÎÄ×ÖÇøÓò
+        //æŸ¥æ‰¾å’Œç­›é€‰æ–‡å­—åŒºåŸŸ
         List<RotatedRect> rects = ImageOpencvUtil.findTextRegionRect(dilationImg);
 
-        //ÓÃºìÏß»­³öÕÒµ½µÄÂÖÀª
+        //ç”¨çº¢çº¿ç”»å‡ºæ‰¾åˆ°çš„è½®å»“
         for (RotatedRect rotatedRect : rects) {
             Point[] rectPoint = new Point[4];
             rotatedRect.points(rectPoint);
@@ -101,10 +104,10 @@ public class testOCR {
                 Imgproc.line(img, rectPoint[j], rectPoint[(j + 1) % 4], new Scalar(0, 0, 255), 2);
             }
         }
-        //ÏÔÊ¾´øÂÖÀªµÄÍ¼Ïñ
+        //æ˜¾ç¤ºå¸¦è½®å»“çš„å›¾åƒ
         imshow("Contour Image", img);
 
-        //½ØÈ¡²¢ÏÔÊ¾ÂÖÀªÍ¼Æ¬
+        //æˆªå–å¹¶æ˜¾ç¤ºè½®å»“å›¾ç‰‡
         Mat dst;
         System.out.println("rects.size:" + rects.size());
         List<Mat> lstMat = new ArrayList<>();
@@ -117,32 +120,47 @@ public class testOCR {
         }
 
         List<BufferedImage> lstBufferedImg = new ArrayList<>();
-        for (int i = 0; i < lstMat.size(); i++) {
+
+        for (int i = lstMat.size() - 1; i >= 0; i--) {
             BufferedImage tempBufferedImg = ImageConvert.Mat2BufImg(lstMat.get(i), ".png");
             lstBufferedImg.add(tempBufferedImg);
         }
 
-        ITesseract instance = new Tesseract();    //´´½¨ITesseract½Ó¿ÚµÄÊµÏÖÊµÀı¶ÔÏó
+        ITesseract instance = new Tesseract();    //åˆ›å»ºITesseractæ¥å£çš„å®ç°å®ä¾‹å¯¹è±¡
 
-        //java.lang.ClassLoader.getSystemResource()·½·¨·µ»ØÒ»¸öURL¶ÔÏó¶ÁÈ¡×ÊÔ´£¬Èç¹û×ÊÔ´²»ÄÜ±»ÕÒµ½Ôò·µ»Ønull¡£
+        //java.lang.ClassLoader.getSystemResource()æ–¹æ³•è¿”å›ä¸€ä¸ªURLå¯¹è±¡è¯»å–èµ„æºï¼Œå¦‚æœèµ„æºä¸èƒ½è¢«æ‰¾åˆ°åˆ™è¿”å›nullã€‚
         URL tessDataUrl = ClassLoader.getSystemResource("tessdata");    //file:/E:/Desktop/OCRTest/Tess4jOcr/Tess4jOcr/Tess4jOcr/target/classes/tessdata
         String path = tessDataUrl.getPath().substring(1);    //url.getPath()-/E:/Desktop/OCRTest/Tess4jOcr/Tess4jOcr/Tess4jOcr/target/classes/tessdata
-        instance.setDatapath(path); //pathÎªtessdataÎÄ¼ş¼ĞÄ¿Â¼Î»ÖÃ
-        instance.setLanguage("chi_sim");    //ÖĞÓ¢ÎÄ»ìºÏÊ¶±ğĞèÓÃ + ·Ö¸ô£¬chi_sim£º¼òÌåÖĞÎÄ£¬eng£ºÓ¢ÎÄ
+        instance.setDatapath(path); //pathä¸ºtessdataæ–‡ä»¶å¤¹ç›®å½•ä½ç½®
+        instance.setLanguage("chi_sim");    //ä¸­è‹±æ–‡æ··åˆè¯†åˆ«éœ€ç”¨ + åˆ†éš”ï¼Œchi_simï¼šç®€ä½“ä¸­æ–‡ï¼Œengï¼šè‹±æ–‡
         instance.setTessVariable("user_defined_dpi", "300");    //Warning: Invalid resolution 0 dpi. Using 70 instead.
         String result = null;
 
-        System.out.println("Ê¶±ğ½á¹ûÈçÏÂ£º");
+        System.out.println("è¯†åˆ«ç»“æœå¦‚ä¸‹ï¼š");
         try {
-            long startTime = System.currentTimeMillis();    //Ê¶±ğÖ®Ç°µÄÊ±¼ä
 
-            for (int i = lstBufferedImg.size()-1; i >= 0; i--) {
-                result = instance.doOCR(lstBufferedImg.get(i));    //¿ªÊ¼Ê¶±ğ
-                System.out.println(result);    //´òÓ¡Ê¶±ğ½á¹û
-            }
 
-            long endTime = System.currentTimeMillis();    //Ê¶±ğ½áÊøµÄÊ±¼ä
-            System.out.println("Ê¶±ğÓÃÊ±£º" + (endTime - startTime) + "ms");    //Ê¶±ğÍ¼Æ¬ºÄÊ±
+//            for (int i = 0; i < lstBufferedImg.size(); i++) {
+//                result = instance.doOCR(lstBufferedImg.get(i));    //å¼€å§‹è¯†åˆ«
+//                System.out.println(result);    //æ‰“å°è¯†åˆ«ç»“æœ
+//            }
+            String name = null;
+            name = instance.doOCR(lstBufferedImg.get(0)).replaceAll("[^\\u4e00-\\u9fa5]", "").trim();
+            System.out.println("å§“åï¼š" + name);
+
+            String address = null;
+            address = (instance.doOCR(lstBufferedImg.get(1)) + instance.doOCR(lstBufferedImg.get(2))).replaceAll("\\n", "").trim();
+            String test = instance.doOCR(lstBufferedImg.get(1)).replaceAll("[^\\s\\u4e00-\\u9fa5\\-0-9]+", "").trim();
+            System.out.println(test);
+            //            replaceAll("[^\\s\\u4e00-\\u9fa5\\-0-9]+", "").replaceAll("\\n", "").trim()
+            System.out.println("åœ°å€ï¼š" + address);
+
+            String idNumber = null;
+            idNumber = instance.doOCR(lstBufferedImg.get(3)).replaceAll("[^0-9xX]", "");
+            System.out.println("èº«ä»½è¯å·ï¼š" + idNumber);
+
+            long endTime = System.currentTimeMillis();    //è¯†åˆ«ç»“æŸçš„æ—¶é—´
+            System.out.println("è¯†åˆ«ç”¨æ—¶ï¼š" + (endTime - startTime) + "ms");    //è¯†åˆ«å›¾ç‰‡è€—æ—¶
         } catch (TesseractException e) {
             System.out.println(e.getMessage());
         }
