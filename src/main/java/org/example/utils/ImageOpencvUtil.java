@@ -18,7 +18,6 @@ import static org.opencv.imgproc.Imgproc.RETR_EXTERNAL;
 public class ImageOpencvUtil {
     private static final int BLACK = 0;
     private static final int WHITE = 255;
-
     private static final Size STANDARDSIZE = new Size(673, 425);
 
     // 私有化构造函数
@@ -80,13 +79,14 @@ public class ImageOpencvUtil {
      * 通过不同的值，就可以达到增强低灰度或高灰度部分细节的作用。
      * 在对图像进行伽马变换时，如果输入的图像矩阵是CV_8U,在进行幂运算时，大于255的值会自动截断为255；
      * 所以，先将图像的灰度值归一化到【0,1】范围，然后再进行幂运算
+     *
      * @param src
      */
     public static Mat imageBrightness(Mat src) {
 
         //定义2个与输入图像大小类型一致的空对象
-        Mat dst = new Mat(src.size(),src.type());
-        Mat dst_1 = new Mat(src.size(),src.type());
+        Mat dst = new Mat(src.size(), src.type());
+        Mat dst_1 = new Mat(src.size(), src.type());
         /*
          * 缩放并转换到另外一种数据类型：
          * dst：目的矩阵；
@@ -111,7 +111,7 @@ public class ImageOpencvUtil {
          * CV_8UC3---8位无符号的三通道---RGB彩色图像
          * CV_8UC4---8位无符号的四通道---带透明色的RGB图像
          */
-        dst_1.convertTo(dst_1, CvType.CV_8U,255,0);
+        dst_1.convertTo(dst_1, CvType.CV_8U, 255, 0);
 
         return dst_1;
     }
@@ -157,7 +157,7 @@ public class ImageOpencvUtil {
      * @param src Mat矩阵图像
      * @return
      */
-    public static int getAdapThreshold(Mat src) {
+    private static int getAdapThreshold(Mat src) {
         int threshold = 0, thresholdNew = 127;
         int nWhiteCount, nBlackCount;
         int nWhiteSum, nBlackSum;
@@ -192,7 +192,7 @@ public class ImageOpencvUtil {
      * @param src Mat矩阵图像
      * @return
      */
-    public static Mat turnPixel(Mat src) {
+    private static Mat turnPixel(Mat src) {
         if (src.channels() != 1) {
             throw new RuntimeException("不是单通道图，需要先灰度化！！！");
         }
@@ -257,19 +257,6 @@ public class ImageOpencvUtil {
         return dst;
     }
 
-    public static Mat whiteBlack(Mat src) {
-        int width = src.cols();
-        int height = src.rows();
-        for (int i = 0; i < height; i++) {
-            for (int j = 0; j < height; j++) {
-                if ((int) src.get(j, i)[0] != BLACK) {
-                    src.put(j, i, WHITE);
-                }
-            }
-        }
-        return src;
-    }
-
     /**
      * 根据二值化图片进行膨胀与腐蚀
      *
@@ -279,12 +266,14 @@ public class ImageOpencvUtil {
     public static Mat corrosion(Mat binaryImage) {
         Mat element1 = Imgproc.getStructuringElement(Imgproc.MORPH_RECT, new Size(1, 1));
         Mat element2 = Imgproc.getStructuringElement(Imgproc.MORPH_RECT, new Size(1, 1));
+        //膨胀
         Mat dilate1 = new Mat();
 //        Imgproc.dilate(binaryImage, dilate1, element2);
         Imgproc.dilate(binaryImage, dilate1, element2, new Point(-1, -1), 1, 1, new Scalar(1));
-
+        //腐蚀
         Mat erode1 = new Mat();
         Imgproc.erode(dilate1, erode1, element1);
+        //膨胀
         Mat dilate2 = new Mat();
         Imgproc.dilate(erode1, dilate2, element2);
         return dilate2;
@@ -338,9 +327,8 @@ public class ImageOpencvUtil {
         return rects;
     }
 
-
     /**
-     * 倾斜矫正
+     * 作用：摆正图片
      *
      * @param rects    文字区域
      * @param srcImage 原Mat矩阵图像
@@ -384,18 +372,31 @@ public class ImageOpencvUtil {
         return dst;
     }
 
+    /**
+     * 倾斜矫正
+     *
+     * @param src 需倾斜校正的Mat矩阵图像
+     * @return
+     */
     public static Mat imgCorrection(Mat src) {
         //灰度化
-        Mat grayImage = gray(src);
+        Mat grayImg = gray(src);
         //二值化
-        Mat binaryImage = binaryzation(grayImage);
+        Mat binaryImg = binaryzation(grayImg);
         //膨胀与腐蚀
-        Mat preprocess = corrosion(binaryImage);
+        Mat corrodedImg = corrosion(binaryImg);
         //查找和筛选文字区域
-        List<RotatedRect> rects = findTextRegion(preprocess);
-        //校正
-        Mat correctedImage = correction(rects, src);
-        return correctedImage;
+        List<RotatedRect> rects = findTextRegion(corrodedImg);
+        //倾斜校正
+        Mat correctedImg = correction(rects, src);
+
+        //todo 可优化添加后两行代码，并返回zoomedImg
+        //倾斜校正后裁剪
+        Mat cuttedImg = cutRect(correctedImg);
+        //裁剪后标准化
+        Mat zoomedImg = zoom(cuttedImg);
+
+        return correctedImg;
     }
 
     /**
@@ -502,129 +503,43 @@ public class ImageOpencvUtil {
         return temp;
     }
 
-
-    //test
-    public static Mat getMax(Mat img) {
-        // MeanShift滤波，降噪（速度太慢！）
-        //Imgproc.pyrMeanShiftFiltering(img, img, 30, 10);
-
-        // 彩色转灰度
-        Imgproc.cvtColor(img, img, Imgproc.COLOR_BGR2GRAY);
-
-        // 高斯滤波，降噪
-        Imgproc.GaussianBlur(img, img, new Size(3, 3), 2, 2);
-
-        // Canny边缘检测
-        Imgproc.Canny(img, img, 20, 60, 3, false);
-
-        // 膨胀，连接边缘
-        Imgproc.dilate(img, img, new Mat(), new Point(-1, -1), 3, 1, new Scalar(1));
-
-        //轮廓提取
-        List<MatOfPoint> contours = new ArrayList<>();
-        Mat hierarchy = new Mat();
-        Imgproc.findContours(img, contours, hierarchy, RETR_EXTERNAL, CHAIN_APPROX_SIMPLE);
-
-        // 找出轮廓对应凸包的四边形拟合
-        List<MatOfPoint> squares = new ArrayList<>();
-        List<MatOfPoint> hulls = new ArrayList<>();
-        MatOfInt hull = new MatOfInt();
-        MatOfPoint2f approx = new MatOfPoint2f();
-        approx.convertTo(approx, CvType.CV_32F);
-
-        for (MatOfPoint contour : contours) {
-            // 边框的凸包
-            Imgproc.convexHull(contour, hull);
-
-            // 用凸包计算出新的轮廓点
-            Point[] contourPoints = contour.toArray();
-            int[] indices = hull.toArray();
-            List<Point> newPoints = new ArrayList<>();
-            for (int index : indices) {
-                newPoints.add(contourPoints[index]);
-            }
-            MatOfPoint2f contourHull = new MatOfPoint2f();
-            contourHull.fromList(newPoints);
-
-            // 多边形拟合凸包边框(此时的拟合的精度较低)
-            Imgproc.approxPolyDP(contourHull, approx, Imgproc.arcLength(contourHull, true) * 0.02, true);
-
-            // 筛选出面积大于某一阈值的，且四边形的各个角度都接近直角的凸四边形
-            MatOfPoint approxf1 = new MatOfPoint();
-            approx.convertTo(approxf1, CvType.CV_32S);
-            if (approx.rows() == 4 && Math.abs(Imgproc.contourArea(approx)) > 40000 &&
-                    Imgproc.isContourConvex(approxf1)) {
-                double maxCosine = 0;
-                for (int j = 2; j < 5; j++) {
-                    double cosine = Math.abs(getAngle(approxf1.toArray()[j % 4], approxf1.toArray()[j - 2], approxf1.toArray()[j - 1]));
-                    maxCosine = Math.max(maxCosine, cosine);
-                }
-                // 角度大概72度
-                if (maxCosine < 0.3) {
-                    MatOfPoint tmp = new MatOfPoint();
-                    contourHull.convertTo(tmp, CvType.CV_32S);
-                    squares.add(approxf1);
-                    hulls.add(tmp);
-                }
-            }
-        }
-        return hierarchy;
+    /**
+     * 作用：缩放图片
+     *
+     * @param src 需要缩放的Mat矩阵图像
+     * @return
+     */
+    public static Mat zoom(Mat src) {
+        Mat dst = new Mat();
+        //区域插值(INTER_AREA):图像放大时类似于线性插值，图像缩小时可以避免波纹出现
+        Imgproc.resize(src, dst, STANDARDSIZE, 0, 0, Imgproc.INTER_AREA);
+        return dst;
     }
-
-    // 根据三个点计算中间那个点的夹角   pt1 pt0 pt2
-    private static double getAngle(Point pt1, Point pt2, Point pt0) {
-        double dx1 = pt1.x - pt0.x;
-        double dy1 = pt1.y - pt0.y;
-        double dx2 = pt2.x - pt0.x;
-        double dy2 = pt2.y - pt0.y;
-        return (dx1 * dx2 + dy1 * dy2) / Math.sqrt((dx1 * dx1 + dy1 * dy1) * (dx2 * dx2 + dy2 * dy2) + 1e-10);
-    }
-
-    // 找到最大的正方形轮廓
-    private static int findLargestSquare(List<MatOfPoint> squares) {
-        if (squares.size() == 0)
-            return -1;
-        int max_width = 0;
-        int max_height = 0;
-        int max_square_idx = 0;
-        int currentIndex = 0;
-        for (MatOfPoint square : squares) {
-            Rect rectangle = Imgproc.boundingRect(square);
-            if (rectangle.width >= max_width && rectangle.height >= max_height) {
-                max_width = rectangle.width;
-                max_height = rectangle.height;
-                max_square_idx = currentIndex;
-            }
-            currentIndex++;
-        }
-        return max_square_idx;
-    }
-
 
     /**
      * 根据二值化图片进行膨胀与腐蚀
      *
-     * @param img 需膨胀腐蚀处理的灰度化后的Mat矩阵图像
+     * @param src 需膨胀腐蚀处理的灰度化后的Mat矩阵图像
      * @return
      */
-    public static Mat preprocess(Mat img) {
+    public static Mat preprocess(Mat src) {
         //1.Sobel算子，x方向求梯度
         Mat sobel = new Mat();
-        Imgproc.Sobel(img, sobel, 0, 1, 0, 3);
+        Imgproc.Sobel(src, sobel, 0, 1, 0, 3);
 
         //2.二值化
         Mat binaryImage = new Mat();
-        Imgproc.threshold(sobel, binaryImage, 0, 255, Imgproc.THRESH_OTSU + Imgproc.THRESH_BINARY);
+        Imgproc.threshold(sobel, binaryImage, 0, 255, Imgproc.THRESH_OTSU | Imgproc.THRESH_BINARY);
 
-        //3.膨胀和腐蚀操作核设定
+        //3.腐蚀和膨胀操作核设定
         Mat element1 = Imgproc.getStructuringElement(Imgproc.MORPH_RECT, new Size(24, 9));
-        //控制高度设置可以控制上下行的膨胀程度，例如3比4的区分能力更强,但也会造成漏检
-        Mat element2 = Imgproc.getStructuringElement(Imgproc.MORPH_RECT, new Size(30, 12));
+        //设置高度大小可以控制上下行的膨胀程度，例如3比4的区分能力更强,但也会造成漏检
+        Mat element2 = Imgproc.getStructuringElement(Imgproc.MORPH_RECT, new Size(26, 9));
 
         //4.膨胀一次，让轮廓突出
         Mat dilate1 = new Mat();
-//        Imgproc.dilate(binaryImage, dilate1, element2);
-        Imgproc.dilate(binaryImage, dilate1, element2, new Point(-1, -1), 1, 1, new Scalar(1));
+        Imgproc.dilate(binaryImage, dilate1, element2);
+//        Imgproc.dilate(binaryImage, dilate1, element2, new Point(-1, -1), 1, 1, new Scalar(1));
 
         //5.腐蚀一次，去掉细节，表格线等。这里去掉的是竖直的线
         Mat erode1 = new Mat();
@@ -633,17 +548,18 @@ public class ImageOpencvUtil {
         //6.再次膨胀，让轮廓明显一些
         Mat dilate2 = new Mat();
         Imgproc.dilate(erode1, dilate2, element2);
+//        Imgproc.dilate(erode1, dilate2, element2, new Point(-1, -1), 1, 1, new Scalar(1));
 
         return dilate2;
     }
 
     /**
-     * 作用：获取文字区域
+     * 作用：获取文字区域矩形框
      *
      * @param img 膨胀与腐蚀后的Mat矩阵图像
      * @return
      */
-    public static List<RotatedRect> findTextRegion1(Mat img) {
+    public static List<RotatedRect> findTextRegionRect(Mat img) {
         List<RotatedRect> rects = new ArrayList<RotatedRect>();
         //1.查找轮廓
         List<MatOfPoint> contours = new ArrayList<MatOfPoint>();
@@ -656,39 +572,8 @@ public class ImageOpencvUtil {
         int img_height = img.height();
         int size = contours.size();
 
-//        RotatedRect idRect, nameRect = null, sexRect = null;
-//        //身份证宽度
-//        int idWidth = Imgproc.minAreaRect(new MatOfPoint2f(contours.get(0).toArray())).boundingRect().width;
-//        int index = 0;
-//
-//        for (int i = 0; i < size; i++) {
-//            double area = Imgproc.contourArea(contours.get(i));
-//            if (area < 1000)//原来是1000
-//                continue;
-//
-//            //找到身份证号码矩形框
-//            RotatedRect rect = Imgproc.minAreaRect(new MatOfPoint2f(contours.get(i).toArray()));
-//            int tempIdWidth = rect.boundingRect().width;
-//            if (tempIdWidth > idWidth) {
-//                idWidth = tempIdWidth;
-//                index = i;
-//            }
-//        }
-//        idRect = Imgproc.minAreaRect(new MatOfPoint2f(contours.get(index).toArray()));
-//
-//        rects.add(idRect);
-//
-//        //8个区域：姓名，性别，名族，出生年份，出生月份，出生日，住址，身份证号码
-//        nameRect = new RotatedRect(new Point(idRect.center.x - 245, idRect.center.y - 290), new Size(110, 60), 0);
-//        sexRect = new RotatedRect(new Point(idRect.center.x - 275, idRect.center.y - 238), new Size(45, 40), 0);
-//        rects.add(nameRect);
-//        rects.add(sexRect);
-
-//        for (int i = 0; i < size; i++) {
-//
-//        }
-
-
+        int idWidth = Imgproc.minAreaRect(new MatOfPoint2f(contours.get(0).toArray())).boundingRect().width;
+        int index = 0;
         //2.筛选那些面积小的
         for (int i = 0; i < size; i++) {
             double area = Imgproc.contourArea(contours.get(i));
@@ -706,12 +591,12 @@ public class ImageOpencvUtil {
             int m_width = rect.boundingRect().width;
             int m_height = rect.boundingRect().height;
 
-            System.out.println(m_width);
+            System.out.println("width = " + m_width);
 
-//            if (m_width < 80)
-//                continue;
-//            if (m_width < m_height * 2)
-//                continue;
+            if (m_width < 80)
+                continue;
+            if (m_width < m_height * 1.2)
+                continue;
             if (80 < rect.center.y && rect.center.y < 200)
                 continue;
 
@@ -727,6 +612,24 @@ public class ImageOpencvUtil {
             rects.add(rect);
         }
 
+        for (int i = 0; i < rects.size(); i++) {
+            int tempIdWidth = rects.get(i).boundingRect().width;
+            if (tempIdWidth > idWidth) {
+                idWidth = tempIdWidth;
+                index = i;
+            }
+        }
+        while (idWidth == rects.get(index).boundingRect().width) {
+            if (Math.abs(rects.get(index).center.y - rects.get(index + 1).center.y) < 10) {
+                rects.remove(index + 1);
+            }
+            break;
+        }
+        for (int i = 0; i < rects.size(); i++) {
+            if (rects.get(i).center.x > rects.get(index).center.x)
+                rects.remove(i);
+        }
+
         System.out.println("中心坐标x：");
         for (int i = 0; i < rects.size(); i++) {
             System.out.println(rects.get(i).center.x);
@@ -740,130 +643,12 @@ public class ImageOpencvUtil {
         return rects;
     }
 
-    /**
-     * 旋转矩形
-     *
-     * @param cannyMat Canny之后的mat矩阵
-     * @param rect     矩形
-     * @return
-     */
-    public static Mat rotation(Mat cannyMat, RotatedRect rect) {
-        // 获取矩形的四个顶点
-        Point[] rectPoint = new Point[4];
-        rect.points(rectPoint);
 
-        double angle = rect.angle + 90;
+    public static Mat cropImage(Mat src, Rect rect) throws Exception {
+        if (src.empty())
+            throw new Exception("image is empty");
 
-        Point center = rect.center;
-
-        Mat correctMat = new Mat(cannyMat.size(), cannyMat.type());
-
-        cannyMat.copyTo(correctMat);
-
-        // 得到旋转矩阵算子
-        Mat matrix = Imgproc.getRotationMatrix2D(center, angle, 0.8);
-
-        Imgproc.warpAffine(correctMat, correctMat, matrix, correctMat.size(), 1, 0, new Scalar(0, 0, 0));
-
-        return correctMat;
-    }
-
-
-    /**
-     * 作用：缩放图片
-     *
-     * @param src 需要缩放的Mat矩阵图像
-     * @return
-     */
-    public static Mat zoom(Mat src) {
-        Mat dst = new Mat();
-        //区域插值(INTER_AREA):图像放大时类似于线性插值，图像缩小时可以避免波纹出现
-        Imgproc.resize(src, dst, STANDARDSIZE, 0, 0, Imgproc.INTER_AREA);
+        Mat dst = new Mat(src, rect);
         return dst;
     }
-
-    /**
-     * 统计图像每行/每列黑色像素点的个数
-     * (n1,n2)=>(height,width),b=true;统计每行
-     * (n1,n2)=>(width,height),b=false;统计每列
-     *
-     * @param src Mat矩阵对象
-     * @param n1
-     * @param n2
-     * @param b   true表示统计每行;false表示统计每列
-     * @return
-     */
-    public static int[] countPixel(Mat src, int n1, int n2, boolean b) {
-        int[] numPixel = new int[n1];
-        for (int i = 0; i < n1; i++) {
-            for (int j = 0; j < n2; j++) {
-                if (b) {
-                    if ((int) src.get(i, j)[0] == BLACK) {
-                        numPixel[i]++;
-                    }
-                } else {
-                    if ((int) src.get(j, i)[0] == BLACK) {
-                        numPixel[i]++;
-                    }
-                }
-            }
-        }
-        return numPixel;
-    }
-
-    /**
-     * 压缩像素值数量；即统计zipLine行像素值的数量为一行
-     *
-     * @param num
-     * @param zipLine
-     */
-    public static int[] zipLinePixel(int[] num, int zipLine) {
-        int len = num.length / zipLine;
-        int[] result = new int[len];
-        int sum;
-        for (int i = 0, j = 0; i < num.length && i + zipLine < num.length; i += zipLine) {
-            sum = 0;
-            for (int k = 0; k < zipLine; k++) {
-                sum += num[i + k];
-            }
-            result[j++] = sum;
-        }
-        return result;
-    }
-
-
-    private org.opencv.core.Mat projectionVerticality(org.opencv.core.Mat mat) {
-        org.opencv.core.Mat projectionMat = mat.clone();//曲线救国，获取同样一个mat
-        projectionMat.setTo(new org.opencv.core.Scalar(255));//然后再把颜色换成白色
-        Double[] dotList = new Double[mat.cols()];//创建一个list用于存储每一列的黑点数量
-        System.loadLibrary(Core.NATIVE_LIBRARY_NAME);
-        System.out.println(mat.dump());
-        int col = mat.cols();
-        int row = mat.rows();
-        for (int x = 0; x < col; x++) {
-            dotList[x] = 0.0;
-            for (int y = 0; y < row; y++) {
-                double binData = mat.get(y, x)[0];
-                if (binData == 0) {//黑色
-
-                    dotList[x]++;
-                }
-            }
-        }
-        //然后生成投影图
-        for (int x = 0; x < mat.cols(); x++) {
-            for (int y = 0; y < mat.rows(); y++) {
-                if (x == 147) {
-                    System.out.println("下一行将会出现错误");
-                }
-                if (y < dotList[x]) {
-                    projectionMat.put(y, x, 0);
-                    System.out.println(x + "列" + y + "行");
-                }
-            }
-        }
-        return projectionMat;
-    }
-
-
 }

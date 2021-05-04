@@ -36,22 +36,15 @@ public class testOpencvFindText {
         }
 //        imshow("Original Image", image);
 
-        //opencv灰度化
-        Mat grayImage = ImageOpencvUtil.gray(image);
-        //二值化
-        Mat binaryImg = ImageOpencvUtil.binaryzation(grayImage);
-        //膨胀与腐蚀
-        Mat corrodedImg = ImageOpencvUtil.corrosion(binaryImg);
-        //文字区域
-        List<RotatedRect> rects = ImageOpencvUtil.findTextRegion(corrodedImg);
-        //倾斜矫正
-        Mat correctedImg = ImageOpencvUtil.correction(rects, image);
+        //倾斜校正
+        Mat correctedImg = ImageOpencvUtil.imgCorrection(image);
+
         //倾斜校正后裁剪
         Mat cuttedImg = ImageOpencvUtil.cutRect(correctedImg);
         //裁剪后缩放标准化
         Mat zoomedImg = ImageOpencvUtil.zoom(cuttedImg);
-//        imshow("Zoomed Image", zoomedImg);
 
+        imshow("Zoomed Image", zoomedImg);
 
         Mat img = zoomedImg.clone();
         BufferedImage bufferedImage = ImageConvert.Mat2BufImg(img, ".png");
@@ -68,69 +61,49 @@ public class testOpencvFindText {
 //        BufferedImage paintWhiteImg = ImageFilterUtil.imageRGBDifferenceFilter(bufferedImage, targetDifferenceValue);
         //黑白化
 //        BufferedImage blackWhiteImage = ImageFilterUtil.replaceWithWhiteColor(paintWhiteImg);
-        //灰度化
-        BufferedImage _grayImg = ImageFilterUtil.gray(bufferedImage);
 
-        Mat temp = ImageConvert.BufImg2Mat(_grayImg);
-        //opencv灰度化
-        Mat __grayImg = new Mat();
-        //非局部均值去噪声
-        __grayImg = ImageOpencvUtil.pyrMeanShiftFiltering(temp);
-//        __grayImg = ImageOpencvUtil.pyrMeanShiftFiltering(__grayImg);
+        //ImageFilterUtil灰度化
+        BufferedImage grayImage = ImageFilterUtil.gray(brightnessImg);
+        //将ImageFilterUtil灰度化后的图片转换为Mat矩阵图像
+        Mat matImg = ImageConvert.BufImg2Mat(grayImage);
 
-        __grayImg = ImageOpencvUtil.gray((__grayImg));
-        imshow("__grayImg", __grayImg);
+        //opencv非局部均值去噪（需要三通道的Mat图像）
+        Mat denoiseImg = ImageOpencvUtil.pyrMeanShiftFiltering(matImg);
+//        grayImg = ImageOpencvUtil.pyrMeanShiftFiltering(grayImg);
 
+        //opencv灰度化--转为单通道
+        Mat grayImg = ImageOpencvUtil.gray(denoiseImg);
 
-        //2.二值化
-        Mat binaryImage = new Mat();
-//        binaryImage = ImageOpencvUtil.binaryzation(__grayImg);
-//        binaryImage = ImageOpencvUtil.ImgBinarization(__grayImg);//有用
+        imshow("grayImg", grayImg);
 
-        //1.Sobel算子，x方向求梯度
-        Mat sobel = new Mat();
-        Imgproc.Sobel(__grayImg, sobel, 0, 1, 0, 3);
-        Imgproc.threshold(sobel, binaryImage, 0, 255, Imgproc.THRESH_OTSU | Imgproc.THRESH_BINARY);
+        //膨胀与腐蚀后的Mat图像
+        Mat dilationImg = ImageOpencvUtil.preprocess(grayImg);
+        imshow("dilation", dilationImg);
 
-        imshow("binaryImage", binaryImage);
+        //查找和筛选文字区域
+        List<RotatedRect> rects = ImageOpencvUtil.findTextRegionRect(dilationImg);
 
-        //3.膨胀和腐蚀操作核设定
-        Mat element1 = Imgproc.getStructuringElement(Imgproc.MORPH_RECT, new Size(24, 9));
-        //控制高度设置可以控制上下行的膨胀程度，例如3比4的区分能力更强,但也会造成漏检
-        Mat element2 = Imgproc.getStructuringElement(Imgproc.MORPH_RECT, new Size(26, 9));
-
-        //4.膨胀一次，让轮廓突出
-        Mat dilate1 = new Mat();
-        Imgproc.dilate(binaryImage, dilate1, element2);
-//        Imgproc.dilate(binaryImage, dilate1, element2, new Point(-1, -1), 1, 1, new Scalar(1));
-
-        //5.腐蚀一次，去掉细节，表格线等。这里去掉的是竖直的线
-        Mat erode1 = new Mat();
-        Imgproc.erode(dilate1, erode1, element1);
-
-        //6.再次膨胀，让轮廓明显一些
-        Mat dilate2 = new Mat();
-        Imgproc.dilate(erode1, dilate2, element2,new Point(-1, -1), 1, 1, new Scalar(1));
-
-
-        Mat dilation = dilate2;
-        imshow("dilation", dilate2);
-        //3.查找和筛选文字区域
-        List<RotatedRect> rects1 = ImageOpencvUtil.findTextRegion1(dilation);
-
-        //4.用线画出这些找到的轮廓
-        for (RotatedRect rotatedRect : rects1) {
+        //用红线画出找到的轮廓
+        for (RotatedRect rotatedRect : rects) {
             Point[] rectPoint = new Point[4];
             rotatedRect.points(rectPoint);
             for (int j = 0; j <= 3; j++) {
                 Imgproc.line(img, rectPoint[j], rectPoint[(j + 1) % 4], new Scalar(0, 0, 255), 2);
             }
         }
+        //显示带轮廓的图像
+        imshow("Contour Image", img);
 
-        //5.显示带轮廓的图像
-        imshow("img", img);
+        //截取并显示轮廓图片
+        Mat dst;
+        System.out.println("rects.size:" + rects.size());
+        for (int i = 0; i < rects.size(); i++) {
+//            dst = new Mat(img, rects.get(i).boundingRect());
+            dst =ImageOpencvUtil.cropImage(img,rects.get(i).boundingRect());
+            //显示截取的关键信息图像
+            imshow("croppedImg" + i, dst);
+        }
 
         waitKey();
-
     }
 }
