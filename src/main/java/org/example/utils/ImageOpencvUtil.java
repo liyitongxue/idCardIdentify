@@ -3,9 +3,7 @@ package org.example.utils;
 import org.opencv.core.*;
 import org.opencv.imgproc.Imgproc;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
 
 import static org.opencv.highgui.HighGui.imshow;
 import static org.opencv.imgproc.Imgproc.CHAIN_APPROX_SIMPLE;
@@ -560,7 +558,11 @@ public class ImageOpencvUtil {
      * @return
      */
     public static List<RotatedRect> findTextRegionRect(Mat img) {
+        //保存姓名、名族、地址、身份证号信息的矩形框
         List<RotatedRect> rects = new ArrayList<RotatedRect>();
+        //保存性别、名族、出生年月日信息的矩形框，并将名族信息矩形框添加到rects中
+        List<RotatedRect> _rects = new ArrayList<RotatedRect>();
+
         //1.查找轮廓
         List<MatOfPoint> contours = new ArrayList<MatOfPoint>();
         Mat hierarchy = new Mat();
@@ -571,13 +573,14 @@ public class ImageOpencvUtil {
         int img_width = img.width();
         int img_height = img.height();
         int size = contours.size();
-
+        //身份证号宽度
         int idWidth = Imgproc.minAreaRect(new MatOfPoint2f(contours.get(0).toArray())).boundingRect().width;
+        //身份证号矩形框在rects中的索引下标
         int index = 0;
         //2.筛选那些面积小的
         for (int i = 0; i < size; i++) {
             double area = Imgproc.contourArea(contours.get(i));
-            if (area < 1000)//原来是1000
+            if (area < 600)//原来是1000
                 continue;
 
             //轮廓近似，作用较小，approxPolyDP函数有待研究
@@ -593,12 +596,10 @@ public class ImageOpencvUtil {
 
             System.out.println("width = " + m_width);
 
-            if (m_width < 80)
-                continue;
-            if (m_width < m_height * 1.2)
-                continue;
-            if (80 < rect.center.y && rect.center.y < 200)
-                continue;
+//            if (m_width < 80)
+//                continue;
+//            if (m_width < m_height * 1.2)
+//                continue;
 
             //筛选那些太细的矩形，留下扁的/**/
             if (m_width * 1.2 < m_height)
@@ -612,6 +613,7 @@ public class ImageOpencvUtil {
             rects.add(rect);
         }
 
+        //遍历找到身份证矩形框的宽度大小及在rects中的索引下标index
         for (int i = 0; i < rects.size(); i++) {
             int tempIdWidth = rects.get(i).boundingRect().width;
             if (tempIdWidth > idWidth) {
@@ -619,16 +621,63 @@ public class ImageOpencvUtil {
                 index = i;
             }
         }
+        System.out.println("身份证号下标：" + index);
+        //如果身份证号周围有矩形框（公民身份证号码文本矩形框），则将其从rects中移除
         while (idWidth == rects.get(index).boundingRect().width) {
             if (Math.abs(rects.get(index).center.y - rects.get(index + 1).center.y) < 10) {
                 rects.remove(index + 1);
             }
             break;
         }
-        for (int i = 0; i < rects.size(); i++) {
+        //将身份证矩形框存储到索引为0的位置
+        if (index != 0) {
+            RotatedRect rotatedRect = rects.get(index);
+            rects.set(index, rects.get(0));
+            rects.set(0, rotatedRect);
+            index = 0;
+        }
+        System.out.println("修改索引后的身份证号下标：" + index);
+
+        /*for (int i = 0; i < rects.size(); i++) {
             if (rects.get(i).center.x > rects.get(index).center.x)
                 rects.remove(i);
         }
+        //将上面的for循环代码--删除身份证号矩形框右边的矩形框改为Iterator迭代器实现
+
+        //下面的代码可能会漏掉一些符合if条件即需要被删除的元素，因为在删除某个元素后，
+        //List对象rects的大小发生了变化，而元素索引也在变化，所以会导致在遍历的时候漏掉某些元素。
+        for (int i = 0; i < rects.size(); i++) {
+            if (rects.get(i).center.x - rects.get(index).center.x < 0 && 80 < rects.get(i).center.y && rects.get(i).center.y < 200) {
+                _rects.add(rects.get(i));
+                rects.remove(i);
+            }
+        }*/
+
+        //使用下面的迭代器实现循环rects并删除rects的元素
+        Iterator<RotatedRect> iterator = rects.iterator();
+        while (iterator.hasNext()) {
+            RotatedRect rect = iterator.next();
+            //删除身份证号矩形框右边的矩形框
+            if (rect.center.x > rects.get(index).center.x)
+                iterator.remove();
+            //将高度处于（80，200）位置的矩形框添加到_rects中
+            else if (rect.center.x < rects.get(index).center.x && 80 < rect.center.y && rect.center.y < 200) {
+                _rects.add(rect);
+                iterator.remove();
+            }
+        }
+
+        //_rects.get(_rects.size() - 2)为 名族信息 矩形框
+        if (_rects.size() >= 2) {
+            for (int i = rects.size() - 1; i >= 0; i--) {
+                //rects按照rects.get(i).center.y从大到小排列，则将名族信息矩形框插入到原来姓名信息矩形框的所在位置
+                if (_rects.get(_rects.size() - 2).center.y > rects.get(i).center.y && _rects.get(_rects.size() - 2).center.y < rects.get(i - 1).center.y) {
+                    rects.add(i, _rects.get(_rects.size() - 2));
+                    break;
+                }
+            }
+        }
+
 
         System.out.println("中心坐标x：");
         for (int i = 0; i < rects.size(); i++) {
@@ -636,9 +685,9 @@ public class ImageOpencvUtil {
         }
         System.out.println("中心坐标y：");
         for (int i = 0; i < rects.size(); i++) {
-
             System.out.println(rects.get(i).center.y);
         }
+        System.out.println("rects.size:" + rects.size());
 
         return rects;
     }

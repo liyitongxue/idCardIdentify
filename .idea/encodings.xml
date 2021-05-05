@@ -3,7 +3,16 @@
   <component name="Encoding" defaultCharsetForPropertiesFiles="UTF-8">
     <file url="file://$PROJECT_DIR$/src/main/java" charset="GBK" />
     <file url="file://$PROJECT_DIR$/src/main/resources" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/src/test/java/batchTestOpencvCutRect.java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/src/test/java/binaryzation.java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/src/test/java/testFilterBrightness.java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/src/test/java/testFilterZoom.java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/src/test/java/testGetMaxRect.java" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/src/test/java/testOCR.java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/src/test/java/testOpencvBrightness.java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/src/test/java/testOpencvCanny.java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/src/test/java/testOpencvCutRect.java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/src/test/java/testOpencvZoom.java" charset="UTF-8" />
     <file url="PROJECT" charset="UTF-8" />
   </component>
 </project>

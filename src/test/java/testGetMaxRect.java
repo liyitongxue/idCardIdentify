@@ -17,29 +17,29 @@ import static org.opencv.imgcodecs.Imgcodecs.imread;
  */
 public class testGetMaxRect {
     public static void main(String[] args) throws Exception {
-        // ¼ÓÔØ¶¯Ì¬¿â
+        // åŠ è½½åŠ¨æ€åº“
         URL url = ClassLoader.getSystemResource("lib/opencv/opencv_java452.dll");
         System.load(url.getPath());
 
-        //Ô­Í¼Â·¾¶
+        //åŸå›¾è·¯å¾„
         String sourceImage = "E:\\Desktop\\OCRTest\\image\\10.jpg";
-        //´¦ÀíºóµÄÍ¼Æ¬±£´æÂ·¾¶
+        //å¤„ç†åçš„å›¾ç‰‡ä¿å­˜è·¯å¾„
         String processedImage = sourceImage.substring(0, sourceImage.lastIndexOf(".")) + "after.png";
 
-        // ¶ÁÈ¡Í¼Ïñ
+        // è¯»å–å›¾åƒ
         Mat image = imread(sourceImage);
         if (image.empty()) {
             throw new Exception("image is empty");
         }
         imshow("Original Image", image);
 
-        // ²ÊÉ«×ª»Ò¶È
+        // å½©è‰²è½¬ç°åº¦
         Imgproc.cvtColor(image, image, Imgproc.COLOR_BGR2GRAY);
 
-        // ¸ßË¹ÂË²¨£¬½µÔë
+        // é«˜æ–¯æ»¤æ³¢ï¼Œé™å™ª
         Imgproc.GaussianBlur(image, image, new Size(3, 3), 2, 2);
 
-        //ÂÖÀª
+        //è½®å»“
         Mat cannyImg = ImageOpencvUtil.canny(image);
 
 

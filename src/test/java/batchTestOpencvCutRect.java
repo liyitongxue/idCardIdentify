@@ -12,14 +12,14 @@ import static org.opencv.imgcodecs.Imgcodecs.imwrite;
  * @author ly
  * @since 2021/4/28
  */
-//ÅúÁ¿²âÊÔImageOpencvUtilµÄCutRect()·½·¨
+//æ‰¹é‡æµ‹è¯•ImageOpencvUtilçš„CutRect()æ–¹æ³•
 public class batchTestOpencvCutRect {
     public static void main(String[] args) throws Exception {
-        // ¼ÓÔØ¶¯Ì¬¿â
+        // åŠ è½½åŠ¨æ€åº“
         URL url = ClassLoader.getSystemResource("lib/opencv/opencv_java452.dll");
         System.load(url.getPath());
 
-        //Ô­Í¼Â·¾¶
+        //åŸå›¾è·¯å¾„
         String[] sourceImage = new String[]{"E:\\Desktop\\OCRTest\\image\\01.png",
                 "E:\\Desktop\\OCRTest\\image\\02.png",
                 "E:\\Desktop\\OCRTest\\image\\03.png",
@@ -34,34 +34,34 @@ public class batchTestOpencvCutRect {
         };
         String[] processedImage = new String[sourceImage.length];
         for (int i = 0; i < sourceImage.length; i++) {
-            //´¦ÀíºóµÄÍ¼Æ¬±£´æÂ·¾¶
+            //å¤„ç†åçš„å›¾ç‰‡ä¿å­˜è·¯å¾„
             processedImage[i] = sourceImage[i].substring(0, sourceImage[i].lastIndexOf(".")) + "afterCutted.png";
 
-            //¶ÁÈ¡Í¼Ïñ
+            //è¯»å–å›¾åƒ
             Mat image = imread(sourceImage[i]);
             if (image.empty()) {
                 throw new Exception("image is empty");
             }
 
-            //opencv»Ò¶È»¯
+            //opencvç°åº¦åŒ–
             Mat grayImg = ImageOpencvUtil.gray(image);
 
-            //¶şÖµ»¯
+            //äºŒå€¼åŒ–
             Mat binaryImg = ImageOpencvUtil.binaryzation(grayImg);
 
-            //ÅòÕÍÓë¸¯Ê´
+            //è†¨èƒ€ä¸è…èš€
             Mat corrodedImg = ImageOpencvUtil.corrosion(binaryImg);
 
-            //ÎÄ×ÖÇøÓò
+            //æ–‡å­—åŒºåŸŸ
             List<RotatedRect> rects = ImageOpencvUtil.findTextRegion(corrodedImg);
 
-            //ÇãĞ±½ÃÕı
+            //å€¾æ–œçŸ«æ­£
             Mat correctedImg = ImageOpencvUtil.correction(rects, image);
 
-            //ÇãĞ±Ğ£Õıºó²Ã¼ô
+            //å€¾æ–œæ ¡æ­£åè£å‰ª
             Mat cuttedImg = ImageOpencvUtil.cutRect(correctedImg);
 
-            //±£´æÇãĞ±Ğ£Õı²¢²Ã¼ôºóµÄÍ¼Æ¬
+            //ä¿å­˜å€¾æ–œæ ¡æ­£å¹¶è£å‰ªåçš„å›¾ç‰‡
             imwrite(processedImage[i], cuttedImg);
         }
     }

@@ -14,41 +14,41 @@ import static org.opencv.imgcodecs.Imgcodecs.imwrite;
  * @author ly
  * @since 2021/4/26
  */
-//²âÊÔOpencvµÄcutRect()²Ã¼ô·½·¨
+//æµ‹è¯•Opencvçš„cutRect()è£å‰ªæ–¹æ³•
 public class testOpencvCutRect {
     public static void main(String[] args) throws Exception {
-        // ¼ÓÔØ¶¯Ì¬¿â
+        // åŠ è½½åŠ¨æ€åº“
         URL url = ClassLoader.getSystemResource("lib/opencv/opencv_java452.dll");
         System.load(url.getPath());
 
-        //Ô­Í¼Â·¾¶
+        //åŸå›¾è·¯å¾„
         String sourceImage = "E:\\Desktop\\OCRTest\\image\\01a.png";
-        //´¦ÀíºóµÄÍ¼Æ¬±£´æÂ·¾¶
+        //å¤„ç†åçš„å›¾ç‰‡ä¿å­˜è·¯å¾„
         String processedImage = sourceImage.substring(0, sourceImage.lastIndexOf(".")) + "after.png";
 
-        //¶ÁÈ¡Í¼Ïñ
+        //è¯»å–å›¾åƒ
         Mat image = imread(sourceImage);
         if (image.empty()) {
             throw new Exception("image is empty");
         }
         imshow("Original Image", image);
 
-        //opencv»Ò¶È»¯
+        //opencvç°åº¦åŒ–
         Mat grayImage = ImageOpencvUtil.gray(image);
 
-        //¶şÖµ»¯
+        //äºŒå€¼åŒ–
         Mat binaryImg = ImageOpencvUtil.binaryzation(grayImage);
 
-        //ÅòÕÍÓë¸¯Ê´
+        //è†¨èƒ€ä¸è…èš€
         Mat corrodedImg = ImageOpencvUtil.corrosion(binaryImg);
 
-        //ÎÄ×ÖÇøÓò
+        //æ–‡å­—åŒºåŸŸ
         List<RotatedRect> rects = ImageOpencvUtil.findTextRegion(corrodedImg);
 
-        //ÇãĞ±½ÃÕı
+        //å€¾æ–œçŸ«æ­£
         Mat correctedImg = ImageOpencvUtil.correction(rects, image);
 
-        //ÇãĞ±Ğ£Õıºó²Ã¼ô
+        //å€¾æ–œæ ¡æ­£åè£å‰ª
         Mat cuttedImg = ImageOpencvUtil.cutRect(correctedImg);
 
         imshow("Cutted Image", cuttedImg);

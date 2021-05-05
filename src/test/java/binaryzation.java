@@ -13,16 +13,16 @@ import static org.opencv.imgcodecs.Imgcodecs.imread;
  */
 public class binaryzation {
     public static void main(String[] args) throws Exception {
-        // 加载动态库
+        // 鍔犺浇鍔ㄦ�佸簱
         URL url = ClassLoader.getSystemResource("lib/opencv/opencv_java452.dll");
         System.load(url.getPath());
 
-        //原图路径
+        //鍘熷浘璺緞
         String sourceImage = "E:\\Desktop\\OCRTest\\image\\01.jpg";
-        //处理后的图片保存路径--在原来的图片主名后加上after
+        //澶勭悊鍚庣殑鍥剧墖淇濆瓨璺緞--鍦ㄥ師鏉ョ殑鍥剧墖涓诲悕鍚庡姞涓奱fter
         String gray_result_image = sourceImage.substring(0, sourceImage.lastIndexOf(".")) + "after1.png";
 
-        // 读取图像
+        // 璇诲彇鍥惧儚
         Mat image = imread(sourceImage);
         if (image.empty()) {
             throw new Exception("image is empty");

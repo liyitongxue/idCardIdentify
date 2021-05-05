@@ -14,30 +14,30 @@ import static org.opencv.imgcodecs.Imgcodecs.imwrite;
  */
 public class testOpencvBrightness {
     public static void main(String[] args) throws Exception {
-        //¼ÓÔØ¶¯Ì¬¿â
+        //åŠ è½½åŠ¨æ€åº“
         URL url = ClassLoader.getSystemResource("lib/opencv/opencv_java452.dll");
         System.load(url.getPath());
 
-        //Ô­Í¼Â·¾¶
+        //åŸå›¾è·¯å¾„
         String sourceImage = "E:\\Desktop\\OCRTest\\image\\03.png";
-        //´¦ÀíºóµÄÍ¼Æ¬±£´æÂ·¾¶--ÔÚÔ­À´µÄÍ¼Æ¬Ö÷Ãûºó¼ÓÉÏafterBrightnessProcessed
+        //å¤„ç†åçš„å›¾ç‰‡ä¿å­˜è·¯å¾„--åœ¨åŸæ¥çš„å›¾ç‰‡ä¸»åååŠ ä¸ŠafterBrightnessProcessed
         String processedImage = sourceImage.substring(0, sourceImage.lastIndexOf(".")) + "afterBrightnessProcessed.png";
 
-        //¶ÁÈ¡Í¼Ïñ
+        //è¯»å–å›¾åƒ
         Mat image = imread(sourceImage);
         if (image.empty()) {
             throw new Exception("image is empty");
         }
-        //Õ¹Ê¾Ô­Í¼
+        //å±•ç¤ºåŸå›¾
         imshow("Original Image", image);
 
-        //µ÷ÓÃImageOpencvUtilµÄÁÁ¶Èµ÷½ÚimageBrightness·½·¨
+        //è°ƒç”¨ImageOpencvUtilçš„äº®åº¦è°ƒèŠ‚imageBrightnessæ–¹æ³•
         Mat brightnessImg = ImageOpencvUtil.imageBrightness(image);
 
-        //Õ¹Ê¾»Ò¶È»¯ºó´¦ÀíºóÍ¼Ïñ
+        //å±•ç¤ºç°åº¦åŒ–åå¤„ç†åå›¾åƒ
         imshow("Processed Image", brightnessImg);
 
-        //±£´æµ½×Ö·û´®processedImage¶ÔÓ¦Î»ÖÃ
+        //ä¿å­˜åˆ°å­—ç¬¦ä¸²processedImageå¯¹åº”ä½ç½®
 //        imwrite(processedImage, grayImage);
         waitKey();
     }

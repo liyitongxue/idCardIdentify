@@ -20,28 +20,28 @@ public class testOpencvFindText {
     private final static int targetDifferenceValue = 20;
 
     public static void main(String[] args) throws Exception {
-        // ¼ÓÔØ¶¯Ì¬¿â
+        // åŠ è½½åŠ¨æ€åº“
         URL url = ClassLoader.getSystemResource("lib/opencv/opencv_java452.dll");
         System.load(url.getPath());
 
-        //Ô­Í¼Â·¾¶
-        String sourceImage = "E:\\Desktop\\OCRTest\\image\\09.png";
-        //´¦ÀíºóµÄÍ¼Æ¬±£´æÂ·¾¶
+        //åŸå›¾è·¯å¾„
+        String sourceImage = "E:\\Desktop\\OCRTest\\image\\01.png";
+        //å¤„ç†åçš„å›¾ç‰‡ä¿å­˜è·¯å¾„
         String processedImage = sourceImage.substring(0, sourceImage.lastIndexOf(".")) + "after.png";
 
-        //¶ÁÈ¡Í¼Ïñ
+        //è¯»å–å›¾åƒ
         Mat image = imread(sourceImage);
         if (image.empty()) {
             throw new Exception("image is empty");
         }
 //        imshow("Original Image", image);
 
-        //ÇãĞ±Ğ£Õı
+        //å€¾æ–œæ ¡æ­£
         Mat correctedImg = ImageOpencvUtil.imgCorrection(image);
 
-        //ÇãĞ±Ğ£Õıºó²Ã¼ô
+        //å€¾æ–œæ ¡æ­£åè£å‰ª
         Mat cuttedImg = ImageOpencvUtil.cutRect(correctedImg);
-        //²Ã¼ôºóËõ·Å±ê×¼»¯
+        //è£å‰ªåç¼©æ”¾æ ‡å‡†åŒ–
         Mat zoomedImg = ImageOpencvUtil.zoom(cuttedImg);
 
         imshow("Zoomed Image", zoomedImg);
@@ -49,41 +49,41 @@ public class testOpencvFindText {
         Mat img = zoomedImg.clone();
         BufferedImage bufferedImage = ImageConvert.Mat2BufImg(img, ".png");
 
-        //ImageFilterUtilµ÷½ÚÁÁ¶È
+        //ImageFilterUtilè°ƒèŠ‚äº®åº¦
         int brightness = ImageFilterUtil.imageBrightness(bufferedImage);
-        System.out.println("brightness = " + brightness);
+        System.out.println("å›¾ç‰‡äº®åº¦ = " + brightness);
         BufferedImage brightnessImg = bufferedImage;
         if (brightness > 180) {
             brightnessImg = ImageFilterUtil.imageBrightness(bufferedImage, -60);
         }
 
-        //Í¿°×
+        //æ¶‚ç™½
 //        BufferedImage paintWhiteImg = ImageFilterUtil.imageRGBDifferenceFilter(bufferedImage, targetDifferenceValue);
-        //ºÚ°×»¯
+        //é»‘ç™½åŒ–
 //        BufferedImage blackWhiteImage = ImageFilterUtil.replaceWithWhiteColor(paintWhiteImg);
 
-        //ImageFilterUtil»Ò¶È»¯
+        //ImageFilterUtilç°åº¦åŒ–
         BufferedImage grayImage = ImageFilterUtil.gray(brightnessImg);
-        //½«ImageFilterUtil»Ò¶È»¯ºóµÄÍ¼Æ¬×ª»»ÎªMat¾ØÕóÍ¼Ïñ
+        //å°†ImageFilterUtilç°åº¦åŒ–åçš„å›¾ç‰‡è½¬æ¢ä¸ºMatçŸ©é˜µå›¾åƒ
         Mat matImg = ImageConvert.BufImg2Mat(grayImage);
 
-        //opencv·Ç¾Ö²¿¾ùÖµÈ¥Ôë£¨ĞèÒªÈıÍ¨µÀµÄMatÍ¼Ïñ£©
+        //opencvéå±€éƒ¨å‡å€¼å»å™ªï¼ˆéœ€è¦ä¸‰é€šé“çš„Matå›¾åƒï¼‰
         Mat denoiseImg = ImageOpencvUtil.pyrMeanShiftFiltering(matImg);
 //        grayImg = ImageOpencvUtil.pyrMeanShiftFiltering(grayImg);
 
-        //opencv»Ò¶È»¯--×ªÎªµ¥Í¨µÀ
+        //opencvç°åº¦åŒ–--è½¬ä¸ºå•é€šé“
         Mat grayImg = ImageOpencvUtil.gray(denoiseImg);
 
-        imshow("grayImg", grayImg);
+//        imshow("grayImg", grayImg);
 
-        //ÅòÕÍÓë¸¯Ê´ºóµÄMatÍ¼Ïñ
+        //è†¨èƒ€ä¸è…èš€åçš„Matå›¾åƒ
         Mat dilationImg = ImageOpencvUtil.preprocess(grayImg);
         imshow("dilation", dilationImg);
 
-        //²éÕÒºÍÉ¸Ñ¡ÎÄ×ÖÇøÓò
+        //æŸ¥æ‰¾å’Œç­›é€‰æ–‡å­—åŒºåŸŸ
         List<RotatedRect> rects = ImageOpencvUtil.findTextRegionRect(dilationImg);
 
-        //ÓÃºìÏß»­³öÕÒµ½µÄÂÖÀª
+        //ç”¨çº¢çº¿ç”»å‡ºæ‰¾åˆ°çš„è½®å»“
         for (RotatedRect rotatedRect : rects) {
             Point[] rectPoint = new Point[4];
             rotatedRect.points(rectPoint);
@@ -91,16 +91,15 @@ public class testOpencvFindText {
                 Imgproc.line(img, rectPoint[j], rectPoint[(j + 1) % 4], new Scalar(0, 0, 255), 2);
             }
         }
-        //ÏÔÊ¾´øÂÖÀªµÄÍ¼Ïñ
+        //æ˜¾ç¤ºå¸¦è½®å»“çš„å›¾åƒ
         imshow("Contour Image", img);
 
-        //½ØÈ¡²¢ÏÔÊ¾ÂÖÀªÍ¼Æ¬
+        //æˆªå–å¹¶æ˜¾ç¤ºè½®å»“å›¾ç‰‡
         Mat dst;
-        System.out.println("rects.size:" + rects.size());
         for (int i = 0; i < rects.size(); i++) {
 //            dst = new Mat(img, rects.get(i).boundingRect());
             dst =ImageOpencvUtil.cropImage(img,rects.get(i).boundingRect());
-            //ÏÔÊ¾½ØÈ¡µÄ¹Ø¼üĞÅÏ¢Í¼Ïñ
+            //æ˜¾ç¤ºæˆªå–çš„å…³é”®ä¿¡æ¯å›¾åƒ
             imshow("croppedImg" + i, dst);
         }
 

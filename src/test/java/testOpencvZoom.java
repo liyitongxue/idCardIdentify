@@ -14,47 +14,47 @@ import static org.opencv.imgcodecs.Imgcodecs.imwrite;
  * @author ly
  * @since 2021/4/27
  */
-//²âÊÔopencvµÄËõ·Åzoom()·½·¨
+//æµ‹è¯•opencvçš„ç¼©æ”¾zoom()æ–¹æ³•
 public class testOpencvZoom {
     public static void main(String[] args) throws Exception {
-        // ¼ÓÔØ¶¯Ì¬¿â
+        // åŠ è½½åŠ¨æ€åº“
         URL url = ClassLoader.getSystemResource("lib/opencv/opencv_java452.dll");
         System.load(url.getPath());
 
-        //Ô­Í¼Â·¾¶
+        //åŸå›¾è·¯å¾„
         String sourceImage = "E:\\Desktop\\OCRTest\\image\\09.png";
-        //´¦ÀíºóµÄÍ¼Æ¬±£´æÂ·¾¶
+        //å¤„ç†åçš„å›¾ç‰‡ä¿å­˜è·¯å¾„
         String processedImage = sourceImage.substring(0, sourceImage.lastIndexOf(".")) + "afterZoom.png";
 
-        //¶ÁÈ¡Í¼Ïñ
+        //è¯»å–å›¾åƒ
         Mat image = imread(sourceImage);
         if (image.empty()) {
             throw new Exception("image is empty");
         }
 
-        //Ô­Í¼Õ¹Ê¾
+        //åŸå›¾å±•ç¤º
         imshow("Original Image", image);
 
-        //opencv»Ò¶È»¯
+        //opencvç°åº¦åŒ–
         Mat grayImage = ImageOpencvUtil.gray(image);
 
-        //¶şÖµ»¯
+        //äºŒå€¼åŒ–
         Mat binaryImage = ImageOpencvUtil.binaryzation(grayImage);
 
-        //ÅòÕÍÓë¸¯Ê´
+        //è†¨èƒ€ä¸è…èš€
         Mat corrodedImage = ImageOpencvUtil.corrosion(binaryImage);
 
-        //ÎÄ×ÖÇøÓò
+        //æ–‡å­—åŒºåŸŸ
         List<RotatedRect> rects = ImageOpencvUtil.findTextRegion(corrodedImage);
 
-        //Ô­Í¼-ÇãĞ±½ÃÕı
+        //åŸå›¾-å€¾æ–œçŸ«æ­£
         Mat correctedImg = ImageOpencvUtil.correction(rects, image);
 
 
-        //²Ã¼ôĞ£ÕıºóµÄÍ¼Æ¬
+        //è£å‰ªæ ¡æ­£åçš„å›¾ç‰‡
         Mat cuttedImg = ImageOpencvUtil.cutRect(correctedImg);
 
-        //opencvËõ·Å
+        //opencvç¼©æ”¾
         Mat zoomedImage = ImageOpencvUtil.zoom(cuttedImg);
 
         imshow("Zoomed Image", zoomedImage);

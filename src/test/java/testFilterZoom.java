@@ -10,25 +10,25 @@ import java.io.File;
  */
 public class testFilterZoom {
     public static void main(String[] args) throws Exception {
-            //Ô­Í¼Â·¾¶
+            //åŸå›¾è·¯å¾„
             String sourceImage = "E:\\Desktop\\OCRTest\\image\\04.png";
-            //´¦ÀíºóµÄÍ¼Æ¬±£´æÂ·¾¶
+            //å¤„ç†åçš„å›¾ç‰‡ä¿å­˜è·¯å¾„
             String processedImage = sourceImage.substring(0, sourceImage.lastIndexOf(".")) + "afterFilterZoom.png";
             String _processedImage = sourceImage.substring(0, sourceImage.lastIndexOf(".")) + "afterFilter_Zoom.png";
 
             File image = new File(sourceImage);
             BufferedImage bufferedImage = ImageIO.read(image);
 
-            //FilterµÄËõ·ÅtestZoom()·½·¨
+            //Filterçš„ç¼©æ”¾testZoom()æ–¹æ³•
             BufferedImage zoomedImg = ImageFilterUtil.testZoom(bufferedImage, 673, 425);
             File outFile = new File(processedImage);
-            //½«Ëõ·ÅºóµÄÍ¼Æ¬±£´æµ½outFile¶ÔÓ¦ÎÄ¼şÎ»ÖÃ´¦
+            //å°†ç¼©æ”¾åçš„å›¾ç‰‡ä¿å­˜åˆ°outFileå¯¹åº”æ–‡ä»¶ä½ç½®å¤„
             ImageIO.write(zoomedImg, "png", outFile);
 
-            //FilterµÄËõ·ÅtestZoom()·½·¨
+            //Filterçš„ç¼©æ”¾testZoom()æ–¹æ³•
             BufferedImage _zoomedImg = ImageFilterUtil.testZoom(zoomedImg, 453, 282);
             File _outFile = new File(_processedImage);
-            //½«Ëõ·ÅºóµÄÍ¼Æ¬±£´æµ½_outFile¶ÔÓ¦ÎÄ¼şÎ»ÖÃ´¦
+            //å°†ç¼©æ”¾åçš„å›¾ç‰‡ä¿å­˜åˆ°_outFileå¯¹åº”æ–‡ä»¶ä½ç½®å¤„
             ImageIO.write(_zoomedImg, "png", _outFile);
     }
 }

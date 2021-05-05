@@ -38,7 +38,7 @@ public class testOCR {
         System.load(url.getPath());
 
         //原图路径
-        String sourceImage = "E:\\Desktop\\OCRTest\\image\\03.png";
+        String sourceImage = "E:\\Desktop\\OCRTest\\image\\01.png";
         //处理后的图片保存路径
         String processedImage = sourceImage.substring(0, sourceImage.lastIndexOf(".")) + "after.png";
 
@@ -95,6 +95,8 @@ public class testOCR {
 
         //查找和筛选文字区域
         List<RotatedRect> rects = ImageOpencvUtil.findTextRegionRect(dilationImg);
+        if (rects.size() != 5)
+            System.out.println("身份证信息文本框获取错误！！！");
 
         //用红线画出找到的轮廓
         for (RotatedRect rotatedRect : rects) {
@@ -138,25 +140,48 @@ public class testOCR {
 
         System.out.println("识别结果如下：");
         try {
-
-
-//            for (int i = 0; i < lstBufferedImg.size(); i++) {
-//                result = instance.doOCR(lstBufferedImg.get(i));    //开始识别
-//                System.out.println(result);    //打印识别结果
-//            }
-            String name = null;
+            String name = "";
+            instance.setLanguage("chi_sim");    //中英文混合识别需用 + 分隔，chi_sim：简体中文，eng：英文
             name = instance.doOCR(lstBufferedImg.get(0)).replaceAll("[^\\u4e00-\\u9fa5]", "").trim();
             System.out.println("姓名：" + name);
 
-            String address = null;
-            address = (instance.doOCR(lstBufferedImg.get(1)) + instance.doOCR(lstBufferedImg.get(2))).replaceAll("\\n", "").trim();
-            String test = instance.doOCR(lstBufferedImg.get(1)).replaceAll("[^\\s\\u4e00-\\u9fa5\\-0-9]+", "").trim();
-            System.out.println(test);
-            //            replaceAll("[^\\s\\u4e00-\\u9fa5\\-0-9]+", "").replaceAll("\\n", "").trim()
+            String idNumber = "";
+            instance.setLanguage("eng");    //中英文混合识别需用 + 分隔，chi_sim：简体中文，eng：英文
+            idNumber = instance.doOCR(lstBufferedImg.get(lstBufferedImg.size() - 1)).replaceAll("[^0-9xX]", "");
+
+            char sex;
+            if (Integer.parseInt(idNumber.substring(16, 17)) % 2 == 0) {
+                sex = '女';
+            } else {
+                sex = '男';
+            }
+            System.out.println("性别：" + sex);
+
+            String nation = "";
+            instance.setLanguage("chi_sim");
+            nation = instance.doOCR(lstBufferedImg.get(1)).trim();
+            System.out.println("名族：" + nation);
+
+            int year = Integer.parseInt(idNumber.substring(6, 10));
+            int month = Integer.parseInt(idNumber.substring(10, 12));
+            int day = Integer.parseInt(idNumber.substring(12, 14));
+            System.out.println("出生：" + year + "年" + month + "月" + day + "日");
+
+            String address = "";
+            instance.setLanguage("chi_sim");    //中英文混合识别需用 + 分隔，chi_sim：简体中文，eng：英文
+            for (int i = 2; i < lstBufferedImg.size() - 1; i++) {
+                address += instance.doOCR(lstBufferedImg.get(i)).trim();
+                //            replaceAll("[^\\s\\u4e00-\\u9fa5\\-0-9]+", "").replaceAll("\\n", "").trim()
+            }
+            address = address.replaceAll("[^\\s\\u4e00-\\u9fa5\\-0-9]+", "").replaceAll(" +", "").trim();
+//            address = address.replaceAll(" ", "");
             System.out.println("地址：" + address);
 
-            String idNumber = null;
-            idNumber = instance.doOCR(lstBufferedImg.get(3)).replaceAll("[^0-9xX]", "");
+//            String test = instance.doOCR(lstBufferedImg.get(1)).trim();
+//            System.out.println(test);
+
+//            String idNumber = "";
+//            idNumber = instance.doOCR(lstBufferedImg.get(lstBufferedImg.size() - 1)).replaceAll("[^0-9xX]", "");
             System.out.println("身份证号：" + idNumber);
 
             long endTime = System.currentTimeMillis();    //识别结束的时间

@@ -11,9 +11,9 @@ import java.io.IOException;
  */
 public class testFilterBrightness {
     public static void main(String[] args) throws IOException {
-        //Ô­Í¼Â·¾¶
+        //åŸå›¾è·¯å¾„
         String sourceImage = "E:\\Desktop\\OCRTest\\image\\03.png";
-        //´¦ÀíºóµÄÍ¼Æ¬±£´æÂ·¾¶
+        //å¤„ç†åçš„å›¾ç‰‡ä¿å­˜è·¯å¾„
         String processedImage = sourceImage.substring(0, sourceImage.lastIndexOf(".")) + "afterFilterBrightness.png";
 
         File image = new File(sourceImage);
@@ -26,13 +26,13 @@ public class testFilterBrightness {
 
         BufferedImage brightnessImg = bufferedImage;
         if (brightness > 180) {
-            //FilterµÄµ÷½ÚÁÁ¶ÈimageBrightness()·½·¨
+            //Filterçš„è°ƒèŠ‚äº®åº¦imageBrightness()æ–¹æ³•
             brightnessImg = ImageFilterUtil.imageBrightness(bufferedImage, -60);
         }
 
 
         File outFile = new File(processedImage);
-        //½«Ëõ·ÅºóµÄÍ¼Æ¬±£´æµ½outFile¶ÔÓ¦ÎÄ¼şÎ»ÖÃ´¦
+        //å°†ç¼©æ”¾åçš„å›¾ç‰‡ä¿å­˜åˆ°outFileå¯¹åº”æ–‡ä»¶ä½ç½®å¤„
         ImageIO.write(brightnessImg, "png", outFile);
     }
 }
